@@ -252,6 +252,14 @@ export class MeasuringTool extends EventDispatcher{
 		let clientHeight = renderAreaSize.height;
 
 		this.light.position.copy(camera.position);
+    
+    let childrens = this.viewer.scene.scene.children;
+    // update size of Sprite
+    for (let children of childrens) { 
+      if (children instanceof window.IconSprite) { 
+        children.updateSize();
+      }
+    }
 
 		// make size independant of distance
 		for (let measure of measurements) {
@@ -323,6 +331,14 @@ export class MeasuringTool extends EventDispatcher{
 					let scale = (70 / pr);
 					label.scale.set(scale, scale, scale);
 				}
+        
+        if(measure.showHorizontal) {
+          let horizLabel = measure.horizontalLabel;
+          let horizDistance = horizLabel.position.distanceTo(camera.position);
+          let pr = Utils.projectedRadius(1, camera, horizDistance, clientWidth, clientHeight);
+          let horizScale = (70 / pr);
+          horizLabel.scale.set(horizScale, horizScale, horizScale);
+        }
 
 				{ // height edge
 					let edge = measure.heightEdge;

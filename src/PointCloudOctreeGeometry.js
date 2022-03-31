@@ -23,7 +23,7 @@ export class PointCloudOctreeGeometry{
 
 export class PointCloudOctreeGeometryNode extends PointCloudTreeNode{
 
-	constructor(name, pcoGeometry, boundingBox){
+	constructor(name, pcoGeometry, boundingBox, getReqStr){
 		super();
 
 		this.id = PointCloudOctreeGeometryNode.IDCount++;
@@ -38,6 +38,7 @@ export class PointCloudOctreeGeometryNode extends PointCloudTreeNode{
 		this.level = null;
 		this.loaded = false;
 		this.oneTimeDisposeHandlers = [];
+    this.getReqStr = getReqStr;
 	}
 
 	isGeometryNode(){
@@ -92,6 +93,10 @@ export class PointCloudOctreeGeometryNode extends PointCloudTreeNode{
 		} else if (version.upTo('1.3')) {
 			url = this.pcoGeometry.octreeDir + '/' + this.name;
 		}
+    
+    if(this.getReqStr) {
+      url += `?${this.getReqStr}`;
+    }
 
 		return url;
 	}
@@ -220,6 +225,10 @@ export class PointCloudOctreeGeometryNode extends PointCloudTreeNode{
 		if ((node.level % node.pcoGeometry.hierarchyStepSize) === 0) {
 			// let hurl = node.pcoGeometry.octreeDir + "/../hierarchy/" + node.name + ".hrc";
 			let hurl = node.pcoGeometry.octreeDir + '/' + node.getHierarchyPath() + '/' + node.name + '.hrc';
+      
+      if(node.getReqStr) {
+        hurl += `?${node.getReqStr}`;
+      }
 
 			let xhr = XHRFactory.createXMLHttpRequest();
 			xhr.open('GET', hurl, true);

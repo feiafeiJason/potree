@@ -45,6 +45,21 @@ function createHeightLabel(){
 	return heightLabel;
 }
 
+/// JASON horizontal measurement
+function createHorizontalLabel(){
+  const horizLabel = new TextSprite('');
+
+  horizLabel.setTextColor({r: 140, g: 250, b: 140, a: 1.0});
+  horizLabel.setBorderColor({r: 0, g: 0, b: 0, a: 1.0});
+  horizLabel.setBackgroundColor({r: 0, g: 0, b: 0, a: 1.0});
+  horizLabel.fontsize = 16;
+  horizLabel.material.depthTest = false;
+  horizLabel.material.opacity = 1;
+  horizLabel.visible = false;
+
+  return horizLabel;
+}
+
 function createAreaLabel(){
 	const areaLabel = new TextSprite('');
 
@@ -295,6 +310,7 @@ export class Measure extends THREE.Object3D {
 		this._showAngles = false;
 		this._showCircle = false;
 		this._showHeight = false;
+    this._showHorizontal = false;     /// JASON horizontal measure
 		this._showEdges = true;
 		this._showAzimuth = false;
 		this.maxMarkers = Number.MAX_SAFE_INTEGER;
@@ -311,6 +327,7 @@ export class Measure extends THREE.Object3D {
 
 		this.heightEdge = createHeightLine();
 		this.heightLabel = createHeightLabel();
+    this.horizontalLabel = createHorizontalLabel(); /// JASON horizontal measure
 		this.areaLabel = createAreaLabel();
 		this.circleRadiusLabel = createCircleRadiusLabel();
 		this.circleRadiusLine = createCircleRadiusLine();
@@ -321,6 +338,7 @@ export class Measure extends THREE.Object3D {
 
 		this.add(this.heightEdge);
 		this.add(this.heightLabel);
+    this.add(this.horizontalLabel);
 		this.add(this.areaLabel);
 		this.add(this.circleRadiusLabel);
 		this.add(this.circleRadiusLine);
@@ -415,33 +433,73 @@ export class Measure extends THREE.Object3D {
 
 		{ // Event Listeners
 			let drag = (e) => {
-				let I = Utils.getMousePointCloudIntersection(
-					e.drag.end, 
-					e.viewer.scene.getActiveCamera(), 
-					e.viewer, 
-					e.viewer.scene.pointclouds,
-					{pickClipped: true});
+        let mouse = e.drag.end;
+        let camera = e.viewer.scene.getActiveCamera();
+        let viewer = e.viewer;
+        let scene = e.viewer.scene.scene;   /// Is this correct?
+        
+        let I = Utils.getMousePointCloudIntersection(
+          mouse, 
+          camera, 
+          viewer, 
+          e.viewer.scene.pointclouds,
+          {pickClipped: true});
 
-				if (I) {
-					let i = this.spheres.indexOf(e.drag.object);
-					if (i !== -1) {
-						let point = this.points[i];
-						
-						// loop through current keys and cleanup ones that will be orphaned
-						for (let key of Object.keys(point)) {
-							if (!I.point[key]) {
-								delete point[key];
-							}
-						}
+        /// Again for all pick position related functions, extend position picking for every other objects than pointcloud
+        let targetPt;
+        if (I) {
+          // console.log(I);
+          targetPt = I.location;
+        }
+        else {
+          // Refer to operation in mouse down event
+          let renderer = viewer.renderer;
+      
+          let nmouse = {
+            x: (mouse.x / renderer.domElement.clientWidth) * 2 - 1,
+            y: -(mouse.y / renderer.domElement.clientHeight) * 2 + 1
+          };
+          
+          let raycaster = new Raycaster();
+          raycaster.setFromCamera(nmouse, camera);
+          
+          let intersects = raycaster.intersectObjects(scene.children);
+          
+          // Pick the nearest intersection point if any
+          if(intersects[0]) {
+            // If found intersect, pick up 'intersect.point' as the pivot location
+            targetPt = intersects[0].point
+          }
+          else {
+            // Unlike mouse control, do not want to pick the ground points here
+            ;
+          }
+        }
+        
+        if(targetPt) {
+          let i = this.spheres.indexOf(e.drag.object);
+          if (i !== -1) {
+            let point = this.points[i];
+            
+            // Do the following only if the point cloud has been picked
+            /// Actually what are these code doing? Logging the points picked?
+            if(I) {
+              // loop through current keys and cleanup ones that will be orphaned
+              for (let key of Object.keys(point)) {
+                if (!I.point[key]) {
+                  delete point[key];
+                }
+              }
 
-						for (let key of Object.keys(I.point).filter(e => e !== 'position')) {
-							point[key] = I.point[key];
-						}
+              for (let key of Object.keys(I.point).filter(e => e !== 'position')) {
+                point[key] = I.point[key];
+              }
+            }
 
-						this.setPosition(i, I.location);
-					}
-				}
-			};
+            this.setPosition(i, targetPt);
+          }
+        }
+      };
 
 			let drop = e => {
 				let i = this.spheres.indexOf(e.drag.object);
@@ -715,6 +773,7 @@ export class Measure extends THREE.Object3D {
 			let heightEdge = this.heightEdge;
 			heightEdge.visible = this.showHeight;
 			this.heightLabel.visible = this.showHeight;
+      this.horizontalLabel.visible = this.showHorizontal;
 
 			if (this.showHeight) {
 				let sorted = this.points.slice().sort((a, b) => a.position.z - b.position.z);
@@ -724,39 +783,77 @@ export class Measure extends THREE.Object3D {
 				let max = highPoint.z;
 				let height = max - min;
 
-				let start = new THREE.Vector3(highPoint.x, highPoint.y, min);
-				let end = new THREE.Vector3(highPoint.x, highPoint.y, max);
+				// Horizontal distance
+        let lowX = lowPoint.x,
+          lowY = lowPoint.y,
+          highX = highPoint.x,
+          highY = highPoint.y;
+          
+        let horizDistance = Math.sqrt(
+          Math.pow(highX-lowX, 2)
+          + Math.pow(highY-lowY, 2)
+        );
 
-				heightEdge.position.copy(lowPoint);
+        /*
+        let start = new Vector3(highPoint.x, highPoint.y, min);
+        let end = new Vector3(highPoint.x, highPoint.y, max);
+         */
 
-				heightEdge.geometry.setPositions([
-					0, 0, 0,
-					...start.clone().sub(lowPoint).toArray(),
-					...start.clone().sub(lowPoint).toArray(),
-					...end.clone().sub(lowPoint).toArray(),
-				]);
+        let start = new Vector3(lowPoint.x, lowPoint.y, max);
+        let end = new Vector3(lowPoint.x, lowPoint.y, min);
+        let endHoriz = new Vector3(highPoint.x, highPoint.y, max);
 
-				heightEdge.geometry.verticesNeedUpdate = true;
-				// heightEdge.geometry.computeLineDistances();
-				// heightEdge.geometry.lineDistancesNeedUpdate = true;
-				heightEdge.geometry.computeBoundingSphere();
-				heightEdge.computeLineDistances();
+        // heightEdge.position.copy(lowPoint);
+        heightEdge.position.copy(highPoint);
 
-				// heightEdge.material.dashSize = height / 40;
-				// heightEdge.material.gapSize = height / 40;
+        /*
+        heightEdge.geometry.setPositions([
+          0, 0, 0,
+          ...start.clone().sub(lowPoint).toArray(),
+          ...start.clone().sub(lowPoint).toArray(),
+          ...end.clone().sub(lowPoint).toArray(),
+        ]);
+         */
+        
+        heightEdge.geometry.setPositions([
+          0, 0, 0,
+          ...start.clone().sub(highPoint).toArray(),
+          ...start.clone().sub(highPoint).toArray(),
+          ...end.clone().sub(highPoint).toArray(),
+        ]);
 
-				let heightLabelPosition = start.clone().add(end).multiplyScalar(0.5);
-				this.heightLabel.position.copy(heightLabelPosition);
+        heightEdge.geometry.verticesNeedUpdate = true;
+        // heightEdge.geometry.computeLineDistances();
+        // heightEdge.geometry.lineDistancesNeedUpdate = true;
+        heightEdge.geometry.computeBoundingSphere();
+        heightEdge.computeLineDistances();
 
-				let suffix = "";
-				if(this.lengthUnit != null && this.lengthUnitDisplay != null){
-					height = height / this.lengthUnit.unitspermeter * this.lengthUnitDisplay.unitspermeter;  //convert to meters then to the display unit
-					suffix = this.lengthUnitDisplay.code;
-				}
+        // heightEdge.material.dashSize = height / 40;
+        // heightEdge.material.gapSize = height / 40;
 
-				let txtHeight = Utils.addCommas(height.toFixed(2));
-				let msg = `${txtHeight} ${suffix}`;
-				this.heightLabel.setText(msg);
+        let heightLabelPosition = start.clone().add(end).multiplyScalar(0.5);
+        this.heightLabel.position.copy(heightLabelPosition);
+        
+        let horizLabelPosition = start.clone().add(endHoriz).multiplyScalar(0.5);
+        // console.log(horizLabelPosition);
+        this.horizontalLabel.position.copy(horizLabelPosition);
+        // window.debugHorizLabel = this.horizontalLabel;
+
+        let suffix = "";
+        if(this.lengthUnit != null && this.lengthUnitDisplay != null){
+          height = height / this.lengthUnit.unitspermeter * this.lengthUnitDisplay.unitspermeter;  //convert to meters then to the display unit
+          suffix = this.lengthUnitDisplay.code;
+          
+          horizDistance = horizDistance / this.lengthUnit.unitspermeter * this.lengthUnitDisplay.unitspermeter;
+        }
+
+        let txtHeight = Utils.addCommas(height.toFixed(2));
+        let msg = `${txtHeight} ${suffix}`;
+        this.heightLabel.setText(msg);
+        
+        let txtHeightHoriz = Utils.addCommas(horizDistance.toFixed(2));
+        let msgHoriz = `${txtHeightHoriz} ${suffix}`;
+        this.horizontalLabel.setText(msgHoriz);
 			}
 		}
 
@@ -905,6 +1002,16 @@ export class Measure extends THREE.Object3D {
 		this._showHeight = value;
 		this.update();
 	}
+  
+  /// JASON horizontal mersure
+  get showHorizontal () {
+    return this._showHorizontal;
+  }
+
+  set showHorizontal (value) {
+    this._showHorizontal = value;
+    this.update();
+  }
 
 	get showArea () {
 		return this._showArea;

@@ -1430,10 +1430,12 @@ export class Viewer extends EventDispatcher{
 
 		let context = canvas.getContext('webgl', contextAttributes );
 
+    /// Allow screen capture
 		this.renderer = new THREE.WebGLRenderer({
 			alpha: true, 
 			premultipliedAlpha: false,
 			canvas: canvas,
+      preserveDrawingBuffer: true,
 			context: context});
 		this.renderer.sortObjects = false;
 		this.renderer.setSize(width, height);

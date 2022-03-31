@@ -7,7 +7,7 @@ import {XHRFactory} from "../XHRFactory.js";
 
 export class BinaryLoader{
 
-	constructor(version, boundingBox, scale){
+	constructor(version, boundingBox, scale, getReqUrl){
 		if (typeof (version) === 'string') {
 			this.version = new Version(version);
 		} else {
@@ -16,6 +16,7 @@ export class BinaryLoader{
 
 		this.boundingBox = boundingBox;
 		this.scale = scale;
+    this.getReqUrl = getReqUrl;
 	}
 
 	load(node){
@@ -26,7 +27,13 @@ export class BinaryLoader{
 		let url = node.getURL();
 
 		if (this.version.equalOrHigher('1.4')) {
-			url += '.bin';
+			if(this.getReqUrl) {
+        let urlSplit = url.split('?'+this.getReqUrl);
+        url = `${urlSplit[0]}.bin?${this.getReqUrl}`;
+      }
+      else {
+        url += '.bin';
+      }
 		}
 
 		let xhr = XHRFactory.createXMLHttpRequest();

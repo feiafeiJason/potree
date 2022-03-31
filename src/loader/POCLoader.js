@@ -131,12 +131,14 @@ export class POCLoader {
 
 					let version = new Version(fMno.version);
 
-					// assume octreeDir is absolute if it starts with http
-					if (fMno.octreeDir.indexOf('http') === 0) {
-						pco.octreeDir = fMno.octreeDir;
-					} else {
-						pco.octreeDir = url + '/../' + fMno.octreeDir;
-					}
+					let urlSplit = url.split('?');
+
+          // assume octreeDir is absolute if it starts with http
+          if (fMno.octreeDir.indexOf('http') === 0) {
+            pco.octreeDir = fMno.octreeDir;
+          } else {
+            pco.octreeDir = urlSplit[0] + '/../' + fMno.octreeDir;
+          }
 
 					pco.spacing = fMno.spacing;
 					pco.hierarchyStepSize = fMno.hierarchyStepSize;
@@ -174,7 +176,7 @@ export class POCLoader {
 						pco.loader = new LasLazLoader(fMno.version, "laz");
 						pco.pointAttributes = lasLazAttributes(fMno);
 					} else {
-						pco.loader = new BinaryLoader(fMno.version, boundingBox, fMno.scale);
+						pco.loader = new BinaryLoader(fMno.version, boundingBox, fMno.scale, urlSplit[1]);
 						pco.pointAttributes = parseAttributes(fMno);
 					}
 
@@ -183,7 +185,7 @@ export class POCLoader {
 					{ // load root
 						let name = 'r';
 
-						let root = new PointCloudOctreeGeometryNode(name, pco, boundingBox);
+						let root = new PointCloudOctreeGeometryNode(name, pco, boundingBox, urlSplit[1]);
 						root.level = 0;
 						root.hasChildren = true;
 						root.spacing = pco.spacing;
@@ -209,7 +211,7 @@ export class POCLoader {
 							//let boundingBox = POCLoader.createChildAABB(parentNode.boundingBox, index);
 							let boundingBox = Utils.createChildAABB(parentNode.boundingBox, index);
 
-							let node = new PointCloudOctreeGeometryNode(name, pco, boundingBox);
+							let node = new PointCloudOctreeGeometryNode(name, pco, boundingBox, urlSplit[1]);
 							node.level = level;
 							node.numPoints = numPoints;
 							node.spacing = pco.spacing / Math.pow(2, level);

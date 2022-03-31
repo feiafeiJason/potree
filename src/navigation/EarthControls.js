@@ -83,6 +83,12 @@ export class EarthControls extends EventDispatcher {
 					}
 				}
 			} else if (e.drag.mouse === MOUSE.RIGHT) {
+        /// Do not allow rotation when the camera is not perspective (in other word, ortho camera)
+        /// Yet could it be more reasonable to provide 2D rotation function?
+        if(camera.type!='PerspectiveCamera') {
+          return;
+        }
+        
 				let ndrag = {
 					x: e.drag.lastDrag.x / this.renderer.domElement.clientWidth,
 					y: e.drag.lastDrag.y / this.renderer.domElement.clientHeight
@@ -116,19 +122,68 @@ export class EarthControls extends EventDispatcher {
 		};
 
 		let onMouseDown = e => {
-			let I = Utils.getMousePointCloudIntersection(
-				e.mouse, 
-				this.scene.getActiveCamera(), 
-				this.viewer, 
-				this.scene.pointclouds, 
-				{pickClipped: false});
+			let mouse = e.mouse;
+      let camera = this.scene.getActiveCamera();
+      let viewer = this.viewer;
+      let scene = this.scene.scene;
+      
+      let I = Utils.getMousePointCloudIntersection(
+        mouse, 
+        camera, 
+        viewer, 
+        this.scene.pointclouds, 
+        {pickClipped: false});
 
-			if (I) {
-				this.pivot = I.location;
-				this.camStart = this.scene.getActiveCamera().clone();
-				this.pivotIndicator.visible = true;
-				this.pivotIndicator.position.copy(I.location);
-			}
+      let targetPt;
+      if (I) {
+        this.pivot = I.location;
+        this.camStart = this.scene.getActiveCamera().clone();
+        this.pivotIndicator.visible = true;
+        this.pivotIndicator.position.copy(I.location);
+      }
+      else {
+        // Still want to pick other objects than pointclouds, like meshes
+        let renderer = viewer.renderer;
+    
+        let nmouse = {
+          x: (mouse.x / renderer.domElement.clientWidth) * 2 - 1,
+          y: -(mouse.y / renderer.domElement.clientHeight) * 2 + 1
+        };
+        
+        let raycaster = new Raycaster();
+        raycaster.setFromCamera(nmouse, camera);
+        
+        let intersects = raycaster.intersectObjects(scene.children);
+        
+        // Pick the nearest intersection point if any
+        if(intersects[0]) {
+          /// 'intersect.face.normal' should be pointing out the direction of the intersecting face. This might be useful, but how?
+          // If found intersect, pick up 'intersect.point' as the pivot location
+          targetPt = intersects[0].point
+        }
+        else {
+          // Pick the ground point (height=0) intersect with the pick ray
+          let ray = raycaster.ray;
+          let origin = ray.origin;
+          let direction = ray.direction;
+          
+          // If pointing to the sky instead of the ground, do nothing
+          if(direction.z<0) {
+            // Find xyz of ground target point downwards
+            let zRatio = origin.z / (-direction.z);
+            let targetX = origin.x + zRatio*direction.x;
+            let targetY = origin.y + zRatio*direction.y;
+            
+            targetPt = new THREE.Vector3(targetX, targetY, 0);
+          }
+        }
+        if(targetPt) {
+          this.pivot = targetPt;
+          this.camStart = this.scene.getActiveCamera().clone();
+          this.pivotIndicator.visible = true;
+          this.pivotIndicator.position.copy(targetPt);
+        }
+      }
 		};
 
 		let drop = e => {
@@ -236,31 +291,88 @@ export class EarthControls extends EventDispatcher {
 		let camera = this.scene.getActiveCamera();
 		
 		// compute zoom
-		if (this.wheelDelta !== 0) {
-			let I = Utils.getMousePointCloudIntersection(
-				this.viewer.inputHandler.mouse, 
-				this.scene.getActiveCamera(), 
-				this.viewer, 
-				this.scene.pointclouds);
+    /// See the mouse down event when dealing with mouse pointing to other objects than pointcloud
+    if (this.wheelDelta !== 0) {
+      let mouse = this.viewer.inputHandler.mouse;
+      let camera = this.scene.getActiveCamera();
+      let viewer = this.viewer;
+      let scene = this.scene.scene;
+      
+      let I = Utils.getMousePointCloudIntersection(
+        mouse, 
+        camera, 
+        viewer, 
+        this.scene.pointclouds);
 
-			if (I) {
-				let resolvedPos = new THREE.Vector3().addVectors(view.position, this.zoomDelta);
-				let distance = I.location.distanceTo(resolvedPos);
-				let jumpDistance = distance * 0.2 * this.wheelDelta;
-				let targetDir = new THREE.Vector3().subVectors(I.location, view.position);
-				targetDir.normalize();
+      let targetPt;
+      if (I) {
+        targetPt = I.location;
+      }
+      else {
+        // Refer to operation in mouse down event
+        let renderer = viewer.renderer;
+    
+        let nmouse = {
+          x: (mouse.x / renderer.domElement.clientWidth) * 2 - 1,
+          y: -(mouse.y / renderer.domElement.clientHeight) * 2 + 1
+        };
+        
+        let raycaster = new Raycaster();
+        raycaster.setFromCamera(nmouse, camera);
+        
+        let intersects = raycaster.intersectObjects(scene.children);
+        
+        // Pick the nearest intersection point if any
+        if(intersects[0]) {
+          // If found intersect, pick up 'intersect.point' as the pivot location
+          targetPt = intersects[0].point
+        }
+        else {
+          // Pick the ground point (height=0) intersect with the pick ray
+          let ray = raycaster.ray;
+          let origin = ray.origin;
+          let direction = ray.direction;
+          
+          // If pointing to the sky instead of the ground, do nothing
+          if(direction.z<0) {
+            // Find xyz of ground target point downwards
+            let zRatio = origin.z / (-direction.z);
+            let targetX = origin.x + zRatio*direction.x;
+            let targetY = origin.y + zRatio*direction.y;
+            
+            targetPt = new THREE.Vector3(targetX, targetY, 0);
+          }
+        }
+      }
+      
+      if(targetPt) {
+        // One extra meter to help zooming into indoor
+        /*
+        console.log(targetPt);
+        console.log(view.position);
+        console.log(this.zoomDelta);
+        console.log('----------------------------------');
+         */
+        
+        let resolvedPos = new Vector3().addVectors(view.position, this.zoomDelta);
+        let distance = targetPt.distanceTo(resolvedPos);
+        distance++;
+        let jumpDistance = distance * 0.2 * this.wheelDelta;
+        let targetDir = new Vector3().subVectors(targetPt, view.position);
+        targetDir.normalize();
 
-				resolvedPos.add(targetDir.multiplyScalar(jumpDistance));
-				this.zoomDelta.subVectors(resolvedPos, view.position);
+        resolvedPos.add(targetDir.multiplyScalar(jumpDistance));
+        this.zoomDelta.subVectors(resolvedPos, view.position);
 
-				{
-					let distance = resolvedPos.distanceTo(I.location);
-					view.radius = distance;
-					let speed = view.radius / 2.5;
-					this.viewer.setMoveSpeed(speed);
-				}
-			}
-		}
+        {
+          let distance = resolvedPos.distanceTo(targetPt);
+          view.radius = distance;
+          distance++;
+          let speed = view.radius / 2.5;
+          this.viewer.setMoveSpeed(speed);
+        }
+      }
+    }
 
 		// apply zoom
 		if (this.zoomDelta.length() !== 0) {

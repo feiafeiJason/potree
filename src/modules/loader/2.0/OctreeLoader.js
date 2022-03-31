@@ -34,6 +34,15 @@ export class NodeLoader{
 
 			let {byteOffset, byteSize} = node;
 
+      let urlSplit = this.url.split("?");
+
+      let urlOctree;
+      if(!urlSplit[1]) {
+        urlOctree = `${this.url}/../octree.bin`;
+      }
+      else {
+        urlOctree = `${urlSplit[0]}/../octree.bin?${urlSplit[1]}`;
+      }
 
 			let urlOctree = `${this.url}/../octree.bin`;
 
@@ -48,7 +57,7 @@ export class NodeLoader{
 			}else{
 				let response = await fetch(urlOctree, {
 					headers: {
-						'content-type': 'multipart/byteranges',
+						// 'content-type': 'multipart/byteranges',
 						'Range': `bytes=${first}-${last}`,
 					},
 				});
@@ -238,14 +247,22 @@ export class NodeLoader{
 	async loadHierarchy(node){
 
 		let {hierarchyByteOffset, hierarchyByteSize} = node;
-		let hierarchyPath = `${this.url}/../hierarchy.bin`;
+		let urlSplit = this.url.split("?");
+
+    let hierarchyPath;
+    if(!urlSplit[1]) {
+      hierarchyPath = `${this.url}/../hierarchy.bin`;
+    }
+    else {
+      hierarchyPath = `${urlSplit[0]}/../hierarchy.bin?${urlSplit[1]}`;
+    }
 		
 		let first = hierarchyByteOffset;
 		let last = first + hierarchyByteSize - 1n;
 
 		let response = await fetch(hierarchyPath, {
 			headers: {
-				'content-type': 'multipart/byteranges',
+				// 'content-type': 'multipart/byteranges',
 				'Range': `bytes=${first}-${last}`,
 			},
 		});
