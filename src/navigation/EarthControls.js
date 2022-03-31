@@ -150,7 +150,7 @@ export class EarthControls extends EventDispatcher {
           y: -(mouse.y / renderer.domElement.clientHeight) * 2 + 1
         };
         
-        let raycaster = new Raycaster();
+        let raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(nmouse, camera);
         
         let intersects = raycaster.intersectObjects(scene.children);
@@ -317,7 +317,7 @@ export class EarthControls extends EventDispatcher {
           y: -(mouse.y / renderer.domElement.clientHeight) * 2 + 1
         };
         
-        let raycaster = new Raycaster();
+        let raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(nmouse, camera);
         
         let intersects = raycaster.intersectObjects(scene.children);
@@ -354,11 +354,11 @@ export class EarthControls extends EventDispatcher {
         console.log('----------------------------------');
          */
         
-        let resolvedPos = new Vector3().addVectors(view.position, this.zoomDelta);
+        let resolvedPos = new THREE.Vector3().addVectors(view.position, this.zoomDelta);
         let distance = targetPt.distanceTo(resolvedPos);
         distance++;
         let jumpDistance = distance * 0.2 * this.wheelDelta;
-        let targetDir = new Vector3().subVectors(targetPt, view.position);
+        let targetDir = new THREE.Vector3().subVectors(targetPt, view.position);
         targetDir.normalize();
 
         resolvedPos.add(targetDir.multiplyScalar(jumpDistance));
