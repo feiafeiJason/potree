@@ -28,7 +28,7 @@ import {OrbitControls} from "../navigation/OrbitControls.js";
 import {FirstPersonControls} from "../navigation/FirstPersonControls.js";
 import {EarthControls} from "../navigation/EarthControls.js";
 import {DeviceOrientationControls} from "../navigation/DeviceOrientationControls.js";
-import {VRControls} from "../navigation/VRControls.js";
+// import {VRControls} from "../navigation/VRControls.js";
 import { EventDispatcher } from "../EventDispatcher.js";
 import { ClassificationScheme } from "../materials/ClassificationScheme.js";
 import { VRButton } from '../../libs/three.js/extra/VRButton.js';
@@ -440,7 +440,8 @@ export class Viewer extends EventDispatcher{
 	getControls () {
 
 		if(this.renderer.xr.isPresenting){
-			return this.vrControls;
+			// return this.vrControls;
+      return this.controls;
 		}else{
 			return this.controls;
 		}
@@ -1148,13 +1149,14 @@ export class Viewer extends EventDispatcher{
 			this.deviceControls.addEventListener('end', this.enableAnnotations.bind(this));
 		}
 
+    /*
 		{ // create VR CONTROLS
 			this.vrControls = new VRControls(this);
 			this.vrControls.enabled = false;
 			this.vrControls.addEventListener('start', this.disableAnnotations.bind(this));
 			this.vrControls.addEventListener('end', this.enableAnnotations.bind(this));
 		}
-
+     */
 
 	};
 
@@ -1922,6 +1924,7 @@ export class Viewer extends EventDispatcher{
 
 	renderVR(){
 
+    /*
 		let renderer = this.renderer;
 
 		renderer.setClearColor(0x550000, 0);
@@ -2077,6 +2080,7 @@ export class Viewer extends EventDispatcher{
 		}
 
 		renderer.resetState();
+     */
 
 	}
 
@@ -2122,7 +2126,7 @@ export class Viewer extends EventDispatcher{
 			const vrActive = this.renderer.xr.isPresenting;
 
 			if(vrActive){
-				this.renderVR();
+				// this.renderVR();
 			}else{
 				this.renderDefault();
 			}

@@ -53,15 +53,15 @@ function createMaterial(){
 }
 
 const planeGeometry = new THREE.PlaneGeometry(1, 1);
-const lineGeometry = new THREE.Geometry();
-
-lineGeometry.vertices.push(
-	new THREE.Vector3(-0.5, -0.5, 0),
-	new THREE.Vector3( 0.5, -0.5, 0),
-	new THREE.Vector3( 0.5,  0.5, 0),
-	new THREE.Vector3(-0.5,  0.5, 0),
-	new THREE.Vector3(-0.5, -0.5, 0),
-);
+let lineGeometry = new THREE.BufferGeometry();
+let verticesArray = new Float32Array([
+  -0.5, -0.5, 0,
+   0.5, -0.5, 0,
+   0.5,  0.5, 0,
+  -0.5,  0.5, 0,
+  -0.5, -0.5, 0
+]);
+lineGeometry.setAttribute( 'position', new THREE.BufferAttribute( verticesArray, 3 ) );
 
 export class OrientedImage{
 

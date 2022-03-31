@@ -619,7 +619,7 @@ export class ProfileWindow extends EventDispatcher {
 
 	initTHREE () {
 		/// Allow screen capture
-    this.renderer = new WebGLRenderer({alpha: true, premultipliedAlpha: false, preserveDrawingBuffer: true});
+    this.renderer = new THREE.WebGLRenderer({alpha: true, premultipliedAlpha: false, preserveDrawingBuffer: true});
 		this.renderer.setClearColor(0x000000, 0);
 		this.renderer.setSize(10, 10);
 		this.renderer.autoClear = false;

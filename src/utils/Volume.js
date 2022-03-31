@@ -114,41 +114,41 @@ export class BoxVolume extends Volume{
 		let boxGeometry = new THREE.BoxGeometry(1, 1, 1);
 		boxGeometry.computeBoundingBox();
 
-		let boxFrameGeometry = new THREE.Geometry();
+		let boxFrameGeometry = new THREE.BufferGeometry();
 		{
 			let Vector3 = THREE.Vector3;
-
-			boxFrameGeometry.vertices.push(
-
-				// bottom
-				new Vector3(-0.5, -0.5, 0.5),
-				new Vector3(0.5, -0.5, 0.5),
-				new Vector3(0.5, -0.5, 0.5),
-				new Vector3(0.5, -0.5, -0.5),
-				new Vector3(0.5, -0.5, -0.5),
-				new Vector3(-0.5, -0.5, -0.5),
-				new Vector3(-0.5, -0.5, -0.5),
-				new Vector3(-0.5, -0.5, 0.5),
+      
+      let vertices = new Float32Array([
+        // bottom
+				-0.5, -0.5, 0.5,
+				0.5, -0.5, 0.5,
+				0.5, -0.5, 0.5,
+				0.5, -0.5, -0.5,
+				0.5, -0.5, -0.5,
+				-0.5, -0.5, -0.5,
+				-0.5, -0.5, -0.5,
+				-0.5, -0.5, 0.5,
 				// top
-				new Vector3(-0.5, 0.5, 0.5),
-				new Vector3(0.5, 0.5, 0.5),
-				new Vector3(0.5, 0.5, 0.5),
-				new Vector3(0.5, 0.5, -0.5),
-				new Vector3(0.5, 0.5, -0.5),
-				new Vector3(-0.5, 0.5, -0.5),
-				new Vector3(-0.5, 0.5, -0.5),
-				new Vector3(-0.5, 0.5, 0.5),
+				-0.5, 0.5, 0.5,
+				0.5, 0.5, 0.5,
+				0.5, 0.5, 0.5,
+				0.5, 0.5, -0.5,
+				0.5, 0.5, -0.5,
+				-0.5, 0.5, -0.5,
+				-0.5, 0.5, -0.5,
+				-0.5, 0.5, 0.5,
 				// sides
-				new Vector3(-0.5, -0.5, 0.5),
-				new Vector3(-0.5, 0.5, 0.5),
-				new Vector3(0.5, -0.5, 0.5),
-				new Vector3(0.5, 0.5, 0.5),
-				new Vector3(0.5, -0.5, -0.5),
-				new Vector3(0.5, 0.5, -0.5),
-				new Vector3(-0.5, -0.5, -0.5),
-				new Vector3(-0.5, 0.5, -0.5),
+				-0.5, -0.5, 0.5,
+				-0.5, 0.5, 0.5,
+				0.5, -0.5, 0.5,
+				0.5, 0.5, 0.5,
+				0.5, -0.5, -0.5,
+				0.5, 0.5, -0.5,
+				-0.5, -0.5, -0.5,
+				-0.5, 0.5, -0.5
+      ]);
 
-			);
+			boxFrameGeometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
 
 		}
 
@@ -229,7 +229,8 @@ export class SphereVolume extends Volume{
 		this.label.visible = false;
 
 
-		let frameGeometry = new THREE.Geometry();
+		let frameGeometry = new THREE.BufferGeometry();
+    let vertices = [];
 		{
 			let steps = 64;
 			let uSegments = 8;
@@ -252,11 +253,16 @@ export class SphereVolume extends Volume{
 					let heightNext = Math.sin(vNext);
 					let xyAmountNext = Math.cos(vNext);
 
+          /*
 					let vertex = new THREE.Vector3(dirx * xyAmount, diry * xyAmount, height);
 					frameGeometry.vertices.push(vertex);
 
 					let vertexNext = new THREE.Vector3(dirx * xyAmountNext, diry * xyAmountNext, heightNext);
 					frameGeometry.vertices.push(vertexNext);
+           */
+          
+          vertices.push(dirx * xyAmount, diry * xyAmount, height);
+          vertices.push(dirx * xyAmountNext, diry * xyAmountNext, heightNext);
 				}
 			}
 
@@ -282,14 +288,21 @@ export class SphereVolume extends Volume{
 
 					let xyAmount = Math.sqrt(1 - height * height);
 
+          /*
 					let vertex = new THREE.Vector3(dirx * xyAmount, diry * xyAmount, height);
 					frameGeometry.vertices.push(vertex);
 
 					let vertexNext = new THREE.Vector3(dirxNext * xyAmount, diryNext * xyAmount, height);
 					frameGeometry.vertices.push(vertexNext);
+           */
+          
+          vertices.push(dirx * xyAmount, diry * xyAmount, height);
+          vertices.push(dirxNext * xyAmount, diryNext * xyAmount, height);
 				}
 			}
 		}
+    let verticesArray = new Float32Array(vertices);
+    frameGeometry.setAttribute( 'position', new THREE.BufferAttribute( verticesArray, 3 ) );
 
 		this.frame = new THREE.LineSegments(frameGeometry, new THREE.LineBasicMaterial({color: 0x000000}));
 		this.add(this.frame);

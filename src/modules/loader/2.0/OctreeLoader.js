@@ -44,8 +44,6 @@ export class NodeLoader{
         urlOctree = `${urlSplit[0]}/../octree.bin?${urlSplit[1]}`;
       }
 
-			let urlOctree = `${this.url}/../octree.bin`;
-
 			let first = byteOffset;
 			let last = byteOffset + byteSize - 1n;
 

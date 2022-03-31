@@ -75,12 +75,15 @@ export class Utils {
 	static debugLine(parent, start, end, color){
 
 		let material = new THREE.LineBasicMaterial({ color: color }); 
-		let geometry = new THREE.Geometry();
+		let geometry = new THREE.BufferGeometry();
 
 		const p1 = new THREE.Vector3(0, 0, 0);
 		const p2 = end.clone().sub(start);
+    
+    let verticesArray = new Float32Array([0,0,0,p2.x,p2.y,p2.z]);
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( verticesArray, 3 ) );
 
-		geometry.vertices.push(p1, p2);
+		// geometry.vertices.push(p1, p2);
 
 		let tl = new THREE.Line( geometry, material );
 		tl.position.copy(start);
@@ -90,8 +93,8 @@ export class Utils {
 		let line = {
 			node: tl,
 			set: (start, end) => {
-				geometry.vertices[0].copy(start);
-				geometry.vertices[1].copy(end);
+				p1.copy(start);
+				p2.copy(end);
 				geometry.verticesNeedUpdate = true;
 			},
 		};
@@ -102,14 +105,16 @@ export class Utils {
 	static debugCircle(parent, center, radius, normal, color){
 		let material = new THREE.LineBasicMaterial({ color: color });
 
-		let geometry = new THREE.Geometry();
+		let geometry = new THREE.BufferGeometry();
+    let vertices = [];
 
 		let n = 32;
 		for(let i = 0; i <= n; i++){
 			let u0 = 2 * Math.PI * (i / n);
 			let u1 = 2 * Math.PI * (i + 1) / n;
 
-			let p0 = new THREE.Vector3(
+			/*
+      let p0 = new THREE.Vector3(
 				Math.cos(u0), 
 				Math.sin(u0), 
 				0
@@ -122,7 +127,12 @@ export class Utils {
 			);
 
 			geometry.vertices.push(p0, p1); 
+       */
+      vertices.push(Math.cos(u0), Math.sin(u0), 0, Math.cos(u1), Math.sin(u1), 0);
 		}
+    
+    let verticesArray = new Float32Array(vertices);
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( verticesArray, 3 ) );
 
 		let tl = new THREE.Line( geometry, material ); 
 		tl.position.copy(center);
@@ -322,7 +332,7 @@ export class Utils {
 			}
 		}
 
-		let skyGeometry = new THREE.CubeGeometry(700, 700, 700);
+		let skyGeometry = new THREE.BoxGeometry(700, 700, 700);
 		let skybox = new THREE.Mesh(skyGeometry, materialArray);
 
 		scene.add(skybox);
@@ -343,16 +353,29 @@ export class Utils {
 			color: color || 0x888888
 		});
 
-		let geometry = new THREE.Geometry();
+		let geometry = new THREE.BufferGeometry();
+    let vertices = []
+    
 		for (let i = 0; i <= length; i++) {
+      /*
 			geometry.vertices.push(new THREE.Vector3(-(spacing * width) / 2, i * spacing - (spacing * length) / 2, 0));
 			geometry.vertices.push(new THREE.Vector3(+(spacing * width) / 2, i * spacing - (spacing * length) / 2, 0));
+       */
+      
+      vertices.push(-(spacing * width) / 2, i * spacing - (spacing * length) / 2, 0, +(spacing * width) / 2, i * spacing - (spacing * length) / 2, 0);
 		}
 
 		for (let i = 0; i <= width; i++) {
+      /*
 			geometry.vertices.push(new THREE.Vector3(i * spacing - (spacing * width) / 2, -(spacing * length) / 2, 0));
 			geometry.vertices.push(new THREE.Vector3(i * spacing - (spacing * width) / 2, +(spacing * length) / 2, 0));
+       */
+       
+      vertices.push(i * spacing - (spacing * width) / 2, -(spacing * length) / 2, 0, i * spacing - (spacing * width) / 2, +(spacing * length) / 2, 0);
 		}
+    
+    let verticesArray = new Float32Array(vertices);
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( verticesArray, 3 ) );
 
 		let line = new THREE.LineSegments(geometry, material, THREE.LinePieces);
 		line.receiveShadow = true;

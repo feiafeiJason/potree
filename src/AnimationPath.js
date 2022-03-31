@@ -111,21 +111,26 @@ export class AnimationPath{
 	}
 
 	getGeometry () {
-		let geometry = new THREE.Geometry();
+		let geometry = new THREE.BufferGeometry();
 
 		let samples = 500;
 		let i = 0;
+    let vertices = [];
 		for (let u = 0; u <= 1; u += 1 / samples) {
 			let position = this.spline.getPoint(u);
-			geometry.vertices[i] = new THREE.Vector3(position.x, position.y, position.z);
+			// geometry.vertices[i] = new THREE.Vector3(position.x, position.y, position.z);
+      vertices.push(position.x, position.y, position.z);
 
 			i++;
 		}
 
 		if(this.closed){
 			let position = this.spline.getPoint(0);
-			geometry.vertices[i] = new THREE.Vector3(position.x, position.y, position.z);
+			// geometry.vertices[i] = new THREE.Vector3(position.x, position.y, position.z);
+      vertices.push(position.x, position.y, position.z);
 		}
+    let verticesArray = new Float32Array(vertices);
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( verticesArray, 3 ) );
 
 		return geometry;
 	}
