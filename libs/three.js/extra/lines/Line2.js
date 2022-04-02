@@ -1,31 +1,19 @@
-/**
- * @author WestLangley / http://github.com/WestLangley
- *
- */
+import { LineSegments2 } from '../lines/LineSegments2.js';
+import { LineGeometry } from '../lines/LineGeometry.js';
+import { LineMaterial } from '../lines/LineMaterial.js';
 
-THREE.Line2 = function ( geometry, material ) {
+class Line2 extends LineSegments2 {
 
-	THREE.LineSegments2.call( this );
+	constructor( geometry = new LineGeometry(), material = new LineMaterial( { color: Math.random() * 0xffffff } ) ) {
 
-	this.type = 'Line2';
+		super( geometry, material );
 
-	this.geometry = geometry !== undefined ? geometry : new THREE.LineGeometry();
-	this.material = material !== undefined ? material : new THREE.LineMaterial( { color: Math.random() * 0xffffff } );
-
-};
-
-THREE.Line2.prototype = Object.assign( Object.create( THREE.LineSegments2.prototype ), {
-
-	constructor: THREE.Line2,
-
-	isLine2: true,
-
-	copy: function ( /* source */ ) {
-
-		// todo
-
-		return this;
+		this.type = 'Line2';
 
 	}
 
-} );
+}
+
+Line2.prototype.isLine2 = true;
+
+export { Line2 };

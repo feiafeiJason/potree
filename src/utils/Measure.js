@@ -460,7 +460,7 @@ export class Measure extends THREE.Object3D {
             y: -(mouse.y / renderer.domElement.clientHeight) * 2 + 1
           };
           
-          let raycaster = new Raycaster();
+          let raycaster = new THREE.Raycaster();
           raycaster.setFromCamera(nmouse, camera);
           
           let intersects = raycaster.intersectObjects(scene.children);
@@ -799,9 +799,9 @@ export class Measure extends THREE.Object3D {
         let end = new Vector3(highPoint.x, highPoint.y, max);
          */
 
-        let start = new Vector3(lowPoint.x, lowPoint.y, max);
-        let end = new Vector3(lowPoint.x, lowPoint.y, min);
-        let endHoriz = new Vector3(highPoint.x, highPoint.y, max);
+        let start = new THREE.Vector3(lowPoint.x, lowPoint.y, max);
+        let end = new THREE.Vector3(lowPoint.x, lowPoint.y, min);
+        let endHoriz = new THREE.Vector3(highPoint.x, highPoint.y, max);
 
         // heightEdge.position.copy(lowPoint);
         heightEdge.position.copy(highPoint);

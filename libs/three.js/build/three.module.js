@@ -17192,12 +17192,12 @@ function flatten( array, nBlocks, blockSize ) {
 
 	if ( nBlocks !== 0 ) {
 
-		firstElem.toArray( r, 0 );
+		firstElem ? firstElem.toArray( r, 0 ) : [0,0,0];
 
 		for ( let i = 1, offset = 0; i !== nBlocks; ++ i ) {
 
 			offset += blockSize;
-			array[ i ].toArray( r, offset );
+			array[ i ] ? array[ i ].toArray( r, offset ) : [0,0,0];
 
 		}
 
