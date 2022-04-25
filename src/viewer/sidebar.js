@@ -816,7 +816,7 @@ export class Sidebar{
 
 		let clippingToolBar = $("#clipping_tools");
 
-		// CLIP VOLUME  **** TODO ***
+		// CLIP VOLUME
 		clippingToolBar.append(this.createToolIcon(
 			Potree.resourcePath + '/icons/clip_volume.svg',
 			'[title]tt.clip_volume',
