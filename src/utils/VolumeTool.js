@@ -9,6 +9,7 @@ export class VolumeTool extends EventDispatcher{
 		super();
 
 		this.viewer = viewer;
+		window.viewer = viewer
 		this.renderer = viewer.renderer;
 
 		this.addEventListener('start_inserting_volume', e => {
@@ -81,6 +82,7 @@ export class VolumeTool extends EventDispatcher{
 		};
 
 		let drag = e => {
+			console.log("drag")
 			let camera = this.viewer.scene.getActiveCamera();
 			
 			let I = Utils.getMousePointCloudIntersection(
@@ -123,10 +125,11 @@ export class VolumeTool extends EventDispatcher{
 	}
 
 	update(){
+		
 		if (!this.viewer.scene) {
 			return;
 		}
-		
+		// console.log("VolumnTool Update")
 		let camera = this.viewer.scene.getActiveCamera();
 		let renderAreaSize = this.viewer.renderer.getSize(new THREE.Vector2());
 		let clientWidth = renderAreaSize.width;

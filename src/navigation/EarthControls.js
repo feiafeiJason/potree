@@ -25,7 +25,11 @@ export class EarthControls extends EventDispatcher {
 
 		{
 			let sg = new THREE.SphereGeometry(1, 16, 16);
-			let sm = new THREE.MeshNormalMaterial();
+
+			// modify the style of control
+			let sm = new MeshBasicMaterial( {color: 0xffffff,side: FrontSide,
+					opacity: 0.8,
+					transparent: true} ); // new MeshNormalMaterial();
 			this.pivotIndicator = new THREE.Mesh(sg, sm);
 			this.pivotIndicator.visible = false;
 			this.sceneControls.add(this.pivotIndicator);

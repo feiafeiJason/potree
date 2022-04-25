@@ -27,9 +27,14 @@ export class TransformationTool {
 
 		});
 
-		let red = 0xE73100;
-		let green = 0x44A24A;
-		let blue = 0x2669E7;
+		// let red = 0xE73100;
+		// let green = 0x44A24A;
+		// let blue = 0x2669E7;
+
+		// transform control color
+		let red = 0x007200;
+		let green = 0x277da1;
+		let blue =  0xf94144;
 		
 		this.activeHandle = null;
 		this.scaleHandles = {
@@ -98,15 +103,22 @@ export class TransformationTool {
       -0.5, 0.5, -0.5
     ]);
     boxFrameGeometry.setAttribute( 'position', new THREE.BufferAttribute( verticesArray, 3 ) );
-		this.frame = new THREE.LineSegments(boxFrameGeometry, new THREE.LineBasicMaterial({color: 0xffff00}));
+		// this.frame = new THREE.LineSegments(boxFrameGeometry, new THREE.LineBasicMaterial({color: 0xffff00}));
+		
+		// box color zxm //{color: 0xffff00}
+		this.frame = new LineSegments(boxFrameGeometry, new LineBasicMaterial({color: 0xffd60a})); 
+		
 		this.scene.add(this.frame);
 
 		
 	}
 
 	initializeScaleHandles(){
-		let sgSphere = new THREE.SphereGeometry(1, 32, 32);
-		let sgLowPolySphere = new THREE.SphereGeometry(1, 16, 16);
+		// let sgSphere = new THREE.SphereGeometry(1, 32, 32);
+		// let sgLowPolySphere = new THREE.SphereGeometry(1, 16, 16);
+
+		let sgSphere = new OctahedronGeometry(1);// SphereGeometry(1, 32, 32);
+		let sgLowPolySphere = new OctahedronGeometry(0.5); //SphereGeometry(1, 16, 16);
 
 		for(let handleName of Object.keys(this.scaleHandles)){
 			let handle = this.scaleHandles[handleName];
