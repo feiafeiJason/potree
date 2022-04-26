@@ -39,7 +39,12 @@ export class FirstPersonControls extends EventDispatcher {
 			LEFT: ['A'.charCodeAt(0), 37],
 			RIGHT: ['D'.charCodeAt(0), 39],
 			UP: ['R'.charCodeAt(0), 33],
-			DOWN: ['F'.charCodeAt(0), 34]
+			DOWN: ['F'.charCodeAt(0), 34],
+			ROTATER: ['E'.charCodeAt(0), 41],
+			ROTATEL: ['Q'.charCodeAt(0), 42],	
+			ROTATEU: ['T'.charCodeAt(0), 43],  // roate up
+			ROTATED: ['G'.charCodeAt(0), 44],  // roate dwon
+			SPEEDUP: [14, 15,16]  // roate dwon
 		};
 
 		this.fadeFactor = 50;
@@ -203,6 +208,13 @@ export class FirstPersonControls extends EventDispatcher {
 			let moveUp = this.keys.UP.some(e => ih.pressedKeys[e]);
 			let moveDown = this.keys.DOWN.some(e => ih.pressedKeys[e]);
 
+			let rotateLeft = this.keys.ROTATEL.some(e => ih.pressedKeys[e]);
+			let rotateRight = this.keys.ROTATER.some(e => ih.pressedKeys[e]);
+			let rotateUp = this.keys.ROTATEU.some(e => ih.pressedKeys[e]);
+			let rotateDown = this.keys.ROTATED.some(e => ih.pressedKeys[e]);
+			let speedUp = this.keys.SPEEDUP.some(e => ih.pressedKeys[e]);
+
+
 			if(this.lockElevation){
 				let dir = view.direction;
 				dir.z = 0;
@@ -239,6 +251,30 @@ export class FirstPersonControls extends EventDispatcher {
 				this.translationWorldDelta.z = this.viewer.getMoveSpeed();
 			} else if (moveDown) {
 				this.translationWorldDelta.z = -this.viewer.getMoveSpeed();
+			}
+
+			// rotate event
+			if (rotateLeft && rotateRight) {	
+			}
+			else if (rotateRight) {
+				// console.log("rotateRight")
+				this.yawDelta = 1
+			} else if (rotateLeft) {
+				// console.log("rotateLeft")
+				this.yawDelta = -1
+			}
+
+			if (rotateDown && rotateUp) {
+			}
+			else if (rotateUp) {
+				this.pitchDelta = -1
+			} else if (rotateDown) {
+				this.pitchDelta = 1
+			}
+			
+			// speed up effect
+			if (speedUp) {
+				delta *= 4
 			}
 		}
 
