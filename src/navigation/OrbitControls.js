@@ -42,6 +42,23 @@ export class OrbitControls extends EventDispatcher{
 
 		this.tweens = [];
 
+		// keyboard control
+		this.translationDelta = new Vector3(0, 0, 0);
+		this.translationWorldDelta = new Vector3(0, 0, 0);
+		this.keys = {
+			FORWARD: ['W'.charCodeAt(0), 38],
+			BACKWARD: ['S'.charCodeAt(0), 40],
+			LEFT: ['A'.charCodeAt(0), 37],
+			RIGHT: ['D'.charCodeAt(0), 39],
+			UP: ['R'.charCodeAt(0), 33],
+			DOWN: ['F'.charCodeAt(0), 34],
+			ROTATER: ['E'.charCodeAt(0), 41],
+			ROTATEL: ['Q'.charCodeAt(0), 42],	
+			ROTATEU: ['T'.charCodeAt(0), 43],  // roate up
+			ROTATED: ['G'.charCodeAt(0), 44],  // roate dwon
+			SPEEDUP: [14, 15,16]  // roate dwon
+		};
+
 		let drag = (e) => {
 			if (e.drag.object !== null) {
 				return;
@@ -233,6 +250,85 @@ export class OrbitControls extends EventDispatcher{
 	update (delta) {
 		let view = this.scene.view;
 
+		// keyboard control
+		{ // accelerate while input is given
+			let ih = this.viewer.inputHandler;
+
+			let moveForward = this.keys.FORWARD.some(e => ih.pressedKeys[e]);
+			let moveBackward = this.keys.BACKWARD.some(e => ih.pressedKeys[e]);
+			let moveLeft = this.keys.LEFT.some(e => ih.pressedKeys[e]);
+			let moveRight = this.keys.RIGHT.some(e => ih.pressedKeys[e]);
+			let moveUp = this.keys.UP.some(e => ih.pressedKeys[e]);
+			let moveDown = this.keys.DOWN.some(e => ih.pressedKeys[e]);
+
+			let rotateLeft = this.keys.ROTATEL.some(e => ih.pressedKeys[e]);
+			let rotateRight = this.keys.ROTATER.some(e => ih.pressedKeys[e]);
+			let rotateUp = this.keys.ROTATEU.some(e => ih.pressedKeys[e]);
+			let rotateDown = this.keys.ROTATED.some(e => ih.pressedKeys[e]);
+			let speedUp = this.keys.SPEEDUP.some(e => ih.pressedKeys[e]);
+
+			if (moveForward && moveBackward) {
+				this.translationDelta.y = 0;
+			} else if (moveForward) {
+				this.translationDelta.y = this.viewer.getMoveSpeed();
+			} else if (moveBackward) {
+				this.translationDelta.y = -this.viewer.getMoveSpeed();
+			}else{
+				this.translationDelta.y = 0;
+			}
+			
+			if (moveLeft && moveRight) {
+				this.translationDelta.x = 0;
+			} else if (moveLeft) {
+				this.translationDelta.x = -this.viewer.getMoveSpeed();
+			} else if (moveRight) {
+				this.translationDelta.x = this.viewer.getMoveSpeed();
+			}else{
+				this.translationDelta.x = 0;
+			}
+			
+
+			if (moveUp && moveDown) {
+				this.translationWorldDelta.z = 0;
+			} else if (moveUp) {
+				this.translationWorldDelta.z = this.viewer.getMoveSpeed();
+			} else if (moveDown) {
+				this.translationWorldDelta.z = -this.viewer.getMoveSpeed();
+			}else{
+				this.translationWorldDelta.z = 0;
+			}
+
+			let effectScale = 0.1
+
+			// rotate event
+			if (rotateLeft && rotateRight) {
+			}
+			else if (rotateRight) {
+				console.log("rotateRight")
+				this.yawDelta = 1 * effectScale
+			} else if (rotateLeft) {
+				console.log("rotateLeft")
+				this.yawDelta = -1 * effectScale
+			} else { 
+				this.yawDelta = 0
+			}
+
+			if (rotateDown && rotateUp) {
+			}
+			else if (rotateUp) {
+				this.pitchDelta = -1*effectScale
+			} else if (rotateDown) {
+				this.pitchDelta = 1*effectScale
+			}else { 
+				this.pitchDelta = 0
+			}
+			
+			// speed up effect
+			if (speedUp) {
+				delta *= 4
+			}
+		}
+
 		{ // apply rotation
 			let progression = Math.min(1, this.fadeFactor * delta);
 
@@ -260,6 +356,20 @@ export class OrbitControls extends EventDispatcher{
 			let py = this.panDelta.y * panDistance;
 
 			view.pan(px, py);
+		}
+
+		{ // apply translation
+			view.translate(
+				this.translationDelta.x * delta,
+				this.translationDelta.y * delta,
+				this.translationDelta.z * delta
+			);
+
+			view.translateWorld(
+				this.translationWorldDelta.x * delta,
+				this.translationWorldDelta.y * delta,
+				this.translationWorldDelta.z * delta
+			);
 		}
 
 		{ // apply zoom

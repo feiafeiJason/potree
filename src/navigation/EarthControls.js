@@ -23,6 +23,23 @@ export class EarthControls extends EventDispatcher {
 
 		this.tweens = [];
 
+		// keyboard control
+		this.translationDelta = new Vector3(0, 0, 0);
+		this.translationWorldDelta = new Vector3(0, 0, 0);
+		this.keys = {
+			FORWARD: ['W'.charCodeAt(0), 38],
+			BACKWARD: ['S'.charCodeAt(0), 40],
+			LEFT: ['A'.charCodeAt(0), 37],
+			RIGHT: ['D'.charCodeAt(0), 39],
+			UP: ['R'.charCodeAt(0), 33],
+			DOWN: ['F'.charCodeAt(0), 34],
+			ROTATER: ['E'.charCodeAt(0), 41],
+			ROTATEL: ['Q'.charCodeAt(0), 42],	
+			ROTATEU: ['T'.charCodeAt(0), 43],  // roate up
+			ROTATED: ['G'.charCodeAt(0), 44],  // roate dwon
+			SPEEDUP: [14, 15,16]  // roate dwon
+		};
+
 		{
 			let sg = new THREE.SphereGeometry(1, 16, 16);
 
@@ -293,6 +310,85 @@ export class EarthControls extends EventDispatcher {
 		let fade = Math.pow(0.5, this.fadeFactor * delta);
 		let progression = 1 - fade;
 		let camera = this.scene.getActiveCamera();
+
+		// keyboard control
+		{ // accelerate while input is given
+			let ih = this.viewer.inputHandler;
+
+			let moveForward = this.keys.FORWARD.some(e => ih.pressedKeys[e]);
+			let moveBackward = this.keys.BACKWARD.some(e => ih.pressedKeys[e]);
+			let moveLeft = this.keys.LEFT.some(e => ih.pressedKeys[e]);
+			let moveRight = this.keys.RIGHT.some(e => ih.pressedKeys[e]);
+			let moveUp = this.keys.UP.some(e => ih.pressedKeys[e]);
+			let moveDown = this.keys.DOWN.some(e => ih.pressedKeys[e]);
+
+			let rotateLeft = this.keys.ROTATEL.some(e => ih.pressedKeys[e]);
+			let rotateRight = this.keys.ROTATER.some(e => ih.pressedKeys[e]);
+			let rotateUp = this.keys.ROTATEU.some(e => ih.pressedKeys[e]);
+			let rotateDown = this.keys.ROTATED.some(e => ih.pressedKeys[e]);
+			let speedUp = this.keys.SPEEDUP.some(e => ih.pressedKeys[e]);
+
+			if (moveForward && moveBackward) {
+				this.translationDelta.y = 0;
+			} else if (moveForward) {
+				this.translationDelta.y = this.viewer.getMoveSpeed();
+			} else if (moveBackward) {
+				this.translationDelta.y = -this.viewer.getMoveSpeed();
+			}else{
+				this.translationDelta.y = 0;
+			}
+			
+			if (moveLeft && moveRight) {
+				this.translationDelta.x = 0;
+			} else if (moveLeft) {
+				this.translationDelta.x = -this.viewer.getMoveSpeed();
+			} else if (moveRight) {
+				this.translationDelta.x = this.viewer.getMoveSpeed();
+			}else{
+				this.translationDelta.x = 0;
+			}
+			
+
+			if (moveUp && moveDown) {
+				this.translationWorldDelta.z = 0;
+			} else if (moveUp) {
+				this.translationWorldDelta.z = this.viewer.getMoveSpeed();
+			} else if (moveDown) {
+				this.translationWorldDelta.z = -this.viewer.getMoveSpeed();
+			}else{
+				this.translationWorldDelta.z = 0;
+			}
+
+			let effectScale = 0.1
+
+			// rotate event
+			if (rotateLeft && rotateRight) {
+			}
+			else if (rotateRight) {
+				// console.log("rotateRight")
+				this.yawDelta = 1 * effectScale
+			} else if (rotateLeft) {
+				// console.log("rotateLeft")
+				this.yawDelta = -1 * effectScale
+			} else { 
+				this.yawDelta = 0
+			}
+
+			if (rotateDown && rotateUp) {
+			}
+			else if (rotateUp) {
+				this.pitchDelta = -1*effectScale
+			} else if (rotateDown) {
+				this.pitchDelta = 1*effectScale
+			}else { 
+				this.pitchDelta = 0
+			}
+			
+			// speed up effect
+			if (speedUp) {
+				delta *= 4
+			}
+		}
 		
 		// compute zoom
     /// See the mouse down event when dealing with mouse pointing to other objects than pointcloud
@@ -378,6 +474,62 @@ export class EarthControls extends EventDispatcher {
       }
     }
 
+		{ // apply rotation
+			let progression = Math.min(1, this.fadeFactor * delta);
+
+			let yaw = view.yaw;
+			let pitch = view.pitch;
+			let pivot = view.getPivot();
+
+			yaw -= progression * this.yawDelta;
+			pitch -= progression * this.pitchDelta;
+
+			view.yaw = yaw;
+			view.pitch = pitch;
+
+			let V = this.scene.view.direction.multiplyScalar(-view.radius);
+			let position = new Vector3().addVectors(pivot, V);
+
+			view.position.copy(position);
+		}
+
+		// { // apply pan
+		// 	let progression = Math.min(1, this.fadeFactor * delta);
+		// 	let panDistance = progression * view.radius * 3;
+
+		// 	let px = -this.panDelta.x * panDistance;
+		// 	let py = this.panDelta.y * panDistance;
+
+		// 	view.pan(px, py);
+		// }
+	
+		{ // apply translation
+			view.translate(
+				this.translationDelta.x * delta,
+				this.translationDelta.y * delta,
+				this.translationDelta.z * delta
+			);
+
+			view.translateWorld(
+				this.translationWorldDelta.x * delta,
+				this.translationWorldDelta.y * delta,
+				this.translationWorldDelta.z * delta
+			);
+		}
+
+		// { // apply zoom
+		// 	let progression = Math.min(1, this.fadeFactor * delta);
+
+		// 	// let radius = view.radius + progression * this.radiusDelta * view.radius * 0.1;
+		// 	let radius = view.radius + progression * this.radiusDelta;
+
+		// 	let V = view.direction.multiplyScalar(-radius);
+		// 	let position = new Vector3().addVectors(view.getPivot(), V);
+		// 	view.radius = radius;
+
+		// 	view.position.copy(position);
+		// }
+
 		// apply zoom
 		if (this.zoomDelta.length() !== 0) {
 			let p = this.zoomDelta.clone().multiplyScalar(progression);
@@ -393,6 +545,11 @@ export class EarthControls extends EventDispatcher {
 			let pr = Utils.projectedRadius(1, camera, distance, pixelwidth, pixelHeight);
 			let scale = (10 / pr);
 			this.pivotIndicator.scale.set(scale, scale, scale);
+		}
+
+		{
+			let speed = view.radius;
+			this.viewer.setMoveSpeed(speed);
 		}
 
 		// decelerate over time
