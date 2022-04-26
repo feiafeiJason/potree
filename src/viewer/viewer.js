@@ -295,10 +295,20 @@ export class Viewer extends EventDispatcher{
 
 		{ // set defaults
 			this.setFOV(60);
+
+			/// Why we disabled EDL at the begining? Performance issue?
+			/// EDL disabled because it does not seem to provide good effect to visualization
+			/// set to opened because the clip box rely on EDL
 			this.setEDLEnabled(false);
-			this.setEDLRadius(1.4);
+			// this.setEDLRadius(1.4);
+			// this.setEDLStrength(0.4);
+			// this.setEDLOpacity(1.0);
 			this.setEDLStrength(0.4);
-			this.setEDLOpacity(1.0);
+			// set the opacity to a suitable level  to see other Icons clearly
+			this.setEDLOpacity(0.5) 
+
+			this.setEDLRadius(0.2) // // set the radius to a suitable level
+
 			this.setClipTask(ClipTask.HIGHLIGHT);
 			this.setClipMethod(ClipMethod.INSIDE_ANY);
 			this.setPointBudget(1*1000*1000);
