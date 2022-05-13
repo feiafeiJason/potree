@@ -35,6 +35,8 @@ import { VRButton } from '../../libs/three.js/extra/VRButton.js';
 
 import JSON5 from "../../libs/json5-2.1.3/json5.mjs";
 
+import {GeoJSONExporter} from "../exporter/GeoJSONExporter.js"
+
 
 export class Viewer extends EventDispatcher{
 	
@@ -179,6 +181,7 @@ export class Viewer extends EventDispatcher{
 		this.skybox = null;
 		this.clock = new THREE.Clock();
 		this.background = null;
+		this.GeoJSONExporter = GeoJSONExporter;
 
 		this.initThree();
 
