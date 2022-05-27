@@ -43,8 +43,8 @@ export class OrbitControls extends EventDispatcher{
 		this.tweens = [];
 
 		// keyboard control
-		this.translationDelta = new Vector3(0, 0, 0);
-		this.translationWorldDelta = new Vector3(0, 0, 0);
+		this.translationDelta = new THREE.Vector3(0, 0, 0);
+		this.translationWorldDelta = new THREE.Vector3(0, 0, 0);
 		this.keys = {
 			FORWARD: ['W'.charCodeAt(0), 38],
 			BACKWARD: ['S'.charCodeAt(0), 40],

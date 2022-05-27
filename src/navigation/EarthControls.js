@@ -24,8 +24,8 @@ export class EarthControls extends EventDispatcher {
 		this.tweens = [];
 
 		// keyboard control
-		this.translationDelta = new Vector3(0, 0, 0);
-		this.translationWorldDelta = new Vector3(0, 0, 0);
+		this.translationDelta = new THREE.Vector3(0, 0, 0);
+		this.translationWorldDelta = new THREE.Vector3(0, 0, 0);
 		this.keys = {
 			FORWARD: ['W'.charCodeAt(0), 38],
 			BACKWARD: ['S'.charCodeAt(0), 40],
@@ -44,7 +44,7 @@ export class EarthControls extends EventDispatcher {
 			let sg = new THREE.SphereGeometry(1, 16, 16);
 
 			// modify the style of control
-			let sm = new MeshBasicMaterial( {color: 0xffffff,side: FrontSide,
+			let sm = new THREE.MeshBasicMaterial( {color: 0xffffff,side: THREE.FrontSide,
 					opacity: 0.8,
 					transparent: true} ); // new MeshNormalMaterial();
 			this.pivotIndicator = new THREE.Mesh(sg, sm);

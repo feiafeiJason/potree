@@ -106,7 +106,7 @@ export class TransformationTool {
 		// this.frame = new THREE.LineSegments(boxFrameGeometry, new THREE.LineBasicMaterial({color: 0xffff00}));
 		
 		// box color zxm //{color: 0xffff00}
-		this.frame = new LineSegments(boxFrameGeometry, new LineBasicMaterial({color: 0xffd60a})); 
+		this.frame = new THREE.LineSegments(boxFrameGeometry, new THREE.LineBasicMaterial({color: 0xffd60a})); 
 		
 		this.scene.add(this.frame);
 
@@ -117,8 +117,8 @@ export class TransformationTool {
 		// let sgSphere = new THREE.SphereGeometry(1, 32, 32);
 		// let sgLowPolySphere = new THREE.SphereGeometry(1, 16, 16);
 
-		let sgSphere = new OctahedronGeometry(1);// SphereGeometry(1, 32, 32);
-		let sgLowPolySphere = new OctahedronGeometry(0.5); //SphereGeometry(1, 16, 16);
+		let sgSphere = new THREE.OctahedronGeometry(1);// SphereGeometry(1, 32, 32);
+		let sgLowPolySphere = new THREE.OctahedronGeometry(0.5); //SphereGeometry(1, 16, 16);
 
 		for(let handleName of Object.keys(this.scaleHandles)){
 			let handle = this.scaleHandles[handleName];

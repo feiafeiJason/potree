@@ -672,7 +672,8 @@ export class Measure extends THREE.Object3D {
 			{ // coordinate labels
 				let coordinateLabel = this.coordinateLabels[0];
 				
-				let msg = position.toArray().map(p => Utils.addCommas(p.toFixed(2))).join(" / ");
+				// let msg = position.toArray().map(p => Utils.addCommas(p.toFixed(2))).join(" / ");
+        let msg = position.toArray().map(p => Utils.addCommas(Math.round(1e3*p)/1e3)).join(", ");
 				coordinateLabel.setText(msg);
 
 				coordinateLabel.visible = this.showCoordinates;
