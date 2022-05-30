@@ -2135,7 +2135,6 @@ export class Viewer extends EventDispatcher{
 		if(Potree.measureTimings) performance.mark("render-start");
 
 		try{
-
 			const vrActive = this.renderer.xr.isPresenting;
 
 			if(vrActive){

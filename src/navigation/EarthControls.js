@@ -488,7 +488,7 @@ export class EarthControls extends EventDispatcher {
 			view.pitch = pitch;
 
 			let V = this.scene.view.direction.multiplyScalar(-view.radius);
-			let position = new Vector3().addVectors(pivot, V);
+			let position = new THREE.Vector3().addVectors(pivot, V);
 
 			view.position.copy(position);
 		}

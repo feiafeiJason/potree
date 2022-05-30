@@ -9,8 +9,11 @@ export class VolumeTool extends EventDispatcher{
 		super();
 
 		this.viewer = viewer;
-		window.viewer = viewer
-		this.renderer = viewer.renderer;
+		
+    /// Need investigation on where this code comes from
+    //window.viewer = viewer
+		
+    this.renderer = viewer.renderer;
 
 		this.addEventListener('start_inserting_volume', e => {
 			this.viewer.dispatchEvent({
