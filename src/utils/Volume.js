@@ -164,7 +164,7 @@ export class BoxVolume extends Volume{
 		this.add(this.box);
 
 		// modify color and width
-		this.frame = new LineSegments(boxFrameGeometry, new LineBasicMaterial({linewidth: 2,color: 0x999999}));
+		this.frame = new THREE.LineSegments(boxFrameGeometry, new THREE.LineBasicMaterial({linewidth: 2,color: 0x999999}));
 
 		// this.frame = new THREE.LineSegments(boxFrameGeometry, new THREE.LineBasicMaterial({color: 0x000000}));
 		// this.frame.mode = THREE.Lines;

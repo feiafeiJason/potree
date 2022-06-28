@@ -1139,6 +1139,11 @@ export class PointCloudOctree extends PointCloudTree {
 		}
 
 	}
+  
+  // Overwrite three.js defaule clone function which does not work for this object
+  clone() {
+    return new this.constructor(this.pcoGeometry, new PointCloudMaterial());
+  }
 
 }
 
