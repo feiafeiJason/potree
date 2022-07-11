@@ -305,8 +305,12 @@ export class EarthControls extends EventDispatcher {
 		}
 	}
 
+  // Delta here is from 'viewer.clock.getDelta()'
 	update (delta) {
 		let view = this.scene.view;
+    // view.yaw = -heading
+    
+    // console.log(view);
 		let fade = Math.pow(0.5, this.fadeFactor * delta);
 		let progression = 1 - fade;
 		let camera = this.scene.getActiveCamera();
@@ -327,41 +331,10 @@ export class EarthControls extends EventDispatcher {
 			let rotateUp = this.keys.ROTATEU.some(e => ih.pressedKeys[e]);
 			let rotateDown = this.keys.ROTATED.some(e => ih.pressedKeys[e]);
 			let speedUp = this.keys.SPEEDUP.some(e => ih.pressedKeys[e]);
-
-			if (moveForward && moveBackward) {
-				this.translationDelta.y = 0;
-			} else if (moveForward) {
-				this.translationDelta.y = this.viewer.getMoveSpeed();
-			} else if (moveBackward) {
-				this.translationDelta.y = -this.viewer.getMoveSpeed();
-			}else{
-				this.translationDelta.y = 0;
-			}
-			
-			if (moveLeft && moveRight) {
-				this.translationDelta.x = 0;
-			} else if (moveLeft) {
-				this.translationDelta.x = -this.viewer.getMoveSpeed();
-			} else if (moveRight) {
-				this.translationDelta.x = this.viewer.getMoveSpeed();
-			}else{
-				this.translationDelta.x = 0;
-			}
-			
-
-			if (moveUp && moveDown) {
-				this.translationWorldDelta.z = 0;
-			} else if (moveUp) {
-				this.translationWorldDelta.z = this.viewer.getMoveSpeed();
-			} else if (moveDown) {
-				this.translationWorldDelta.z = -this.viewer.getMoveSpeed();
-			}else{
-				this.translationWorldDelta.z = 0;
-			}
-
-			let effectScale = 0.1
-
-			// rotate event
+      
+      let effectScale = 0.1;
+      
+      // rotate event
 			if (rotateLeft && rotateRight) {
 			}
 			else if (rotateRight) {
@@ -387,6 +360,56 @@ export class EarthControls extends EventDispatcher {
 			// speed up effect
 			if (speedUp) {
 				delta *= 4
+			}
+      
+      // Compute yaw and pitch
+      let progression = Math.min(1, this.fadeFactor * delta);
+      let yaw = view.yaw;
+			let pitch = view.pitch;
+      
+      yaw -= progression * this.yawDelta;
+      pitch -= progression * this.pitchDelta;
+      
+      view.yaw = yaw;
+      view.pitch = pitch;
+
+      // translationDelta -> translationWorldDelta
+      // Reset translation
+      this.translationWorldDelta = new THREE.Vector3(0,0,0);
+      
+			if (moveForward && moveBackward) {
+				this.translationWorldDelta.y += 0;
+			} else if (moveForward) {
+				this.translationWorldDelta.y += Math.cos(-view.yaw) * this.viewer.getMoveSpeed();
+        this.translationWorldDelta.x += Math.sin(-view.yaw) * this.viewer.getMoveSpeed();
+			} else if (moveBackward) {
+				this.translationWorldDelta.y += -Math.cos(-view.yaw) * this.viewer.getMoveSpeed();
+        this.translationWorldDelta.x += -Math.sin(-view.yaw) * this.viewer.getMoveSpeed();
+			}else{
+				this.translationWorldDelta.y += 0;
+			}
+			
+			if (moveLeft && moveRight) {
+				this.translationWorldDelta.x += 0;
+			} else if (moveLeft) {
+				this.translationWorldDelta.y += Math.cos(-view.yaw-Math.PI/2) * this.viewer.getMoveSpeed();
+        this.translationWorldDelta.x += Math.sin(-view.yaw-Math.PI/2) * this.viewer.getMoveSpeed();
+			} else if (moveRight) {
+				this.translationWorldDelta.y += Math.cos(-view.yaw+Math.PI/2) * this.viewer.getMoveSpeed();
+        this.translationWorldDelta.x += Math.sin(-view.yaw+Math.PI/2) * this.viewer.getMoveSpeed();
+			}else{
+				this.translationWorldDelta.x += 0;
+			}
+			
+
+			if (moveUp && moveDown) {
+				this.translationWorldDelta.z = 0;
+			} else if (moveUp) {
+				this.translationWorldDelta.z = this.viewer.getMoveSpeed();
+			} else if (moveDown) {
+				this.translationWorldDelta.z = -this.viewer.getMoveSpeed();
+			}else{
+				this.translationWorldDelta.z = 0;
 			}
 		}
 		
@@ -474,24 +497,25 @@ export class EarthControls extends EventDispatcher {
       }
     }
 
-		{ // apply rotation
-			let progression = Math.min(1, this.fadeFactor * delta);
+    /// Obsoleted for not catering for user's habits
+		// { // apply rotation
+			// let progression = Math.min(1, this.fadeFactor * delta);
 
-			let yaw = view.yaw;
-			let pitch = view.pitch;
-			let pivot = view.getPivot();
+			// let yaw = view.yaw;
+			// let pitch = view.pitch;
+			// let pivot = view.getPivot();
 
-			yaw -= progression * this.yawDelta;
-			pitch -= progression * this.pitchDelta;
+			// yaw -= progression * this.yawDelta;
+			// pitch -= progression * this.pitchDelta;
 
-			view.yaw = yaw;
-			view.pitch = pitch;
+			// view.yaw = yaw;
+			// view.pitch = pitch;
 
-			let V = this.scene.view.direction.multiplyScalar(-view.radius);
-			let position = new THREE.Vector3().addVectors(pivot, V);
+			// let V = this.scene.view.direction.multiplyScalar(-view.radius);
+			// let position = new THREE.Vector3().addVectors(pivot, V);
 
-			view.position.copy(position);
-		}
+			// view.position.copy(position);
+		// }
 
 		// { // apply pan
 		// 	let progression = Math.min(1, this.fadeFactor * delta);
