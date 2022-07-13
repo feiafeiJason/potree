@@ -44,7 +44,7 @@ export class EarthControls extends EventDispatcher {
       let sg = new THREE.SphereGeometry(1, 16, 16);
 
       // modify the style of control
-      let sm = new THREE.MeshBasicMaterial( {color: 0xffffff,side: THREE.FrontSide,
+      let sm = new THREE.MeshBasicMaterial( {color: 0xffffff, side: THREE.FrontSide,
           opacity: 0.8,
           transparent: true} ); // new MeshNormalMaterial();
       this.pivotIndicator = new THREE.Mesh(sg, sm);
@@ -76,7 +76,6 @@ export class EarthControls extends EventDispatcher {
       let domElement = this.viewer.renderer.domElement;
 
       if (e.drag.mouse === MOUSE.LEFT) {
-
         let ray = Utils.mouseToRay(mouse, camera, domElement.clientWidth, domElement.clientHeight);
         let plane = new THREE.Plane().setFromNormalAndCoplanarPoint(
           new THREE.Vector3(0, 0, 1),
@@ -103,7 +102,7 @@ export class EarthControls extends EventDispatcher {
             this.viewer.setMoveSpeed(speed);
           }
         }
-      } else if (e.drag.mouse === MOUSE.RIGHT) {
+      } else if (e.drag.mouse === MOUSE.RIGHT || e.drag.mouse === MOUSE.MIDDLE) {
         /// Do not allow rotation when the camera is not perspective (in other word, ortho camera)
         /// Yet could it be more reasonable to provide 2D rotation function?
         if(camera.type!='PerspectiveCamera') {
@@ -147,6 +146,45 @@ export class EarthControls extends EventDispatcher {
       let camera = this.scene.getActiveCamera();
       let viewer = this.viewer;
       let scene = this.scene.scene;
+      let cameraPosition = camera.position;
+      
+      // Move this to somewhere else 
+      delete(this.viewer._draggable);
+      
+      let targetPt;
+      
+      // Pick other objects anyway, adopt the closest one as the pivot point
+      let renderer = viewer.renderer;
+    
+      let nmouse = {
+        x: (mouse.x / renderer.domElement.clientWidth) * 2 - 1,
+        y: -(mouse.y / renderer.domElement.clientHeight) * 2 + 1
+      };
+      
+      console.log(mouse);
+      console.log(nmouse);
+      
+      let raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(nmouse, camera);
+      
+      let intersects = raycaster.intersectObjects(scene.children);
+      
+      // Loop through the intersection objects to see whether anything draggable. If so, stop right now with no pivot.
+      for(let i=0; i<intersects.length; i++) {
+        let intersectObj = intersects[i].object;
+        if(intersectObj.draggable) {
+          /// Stop, do not trigger any default mouse drag event
+          this.viewer._draggable = intersectObj;
+          return;
+        }
+      }
+      
+      // Pick the nearest intersection point if any
+      if(intersects[0]) {
+        /// 'intersect.face.normal' should be pointing out the direction of the intersecting face. This might be useful, but how?
+        // If found intersect, pick up 'intersect.point' as the pivot location
+        targetPt = intersects[0].point;
+      }
       
       let I = Utils.getMousePointCloudIntersection(
         mouse, 
@@ -155,55 +193,35 @@ export class EarthControls extends EventDispatcher {
         this.scene.pointclouds, 
         {pickClipped: false});
 
-      let targetPt;
-      if (I) {
-        this.pivot = I.location;
-        this.camStart = this.scene.getActiveCamera().clone();
-        this.pivotIndicator.visible = true;
-        this.pivotIndicator.position.copy(I.location);
+      if(I) {
+        if(!targetPt || (cameraPosition.distanceTo(I.location)<cameraPosition.distanceTo(targetPt))) {
+          targetPt = I.location;
+        }
       }
-      else {
-        // Still want to pick other objects than pointclouds, like meshes
-        let renderer = viewer.renderer;
-    
-        let nmouse = {
-          x: (mouse.x / renderer.domElement.clientWidth) * 2 - 1,
-          y: -(mouse.y / renderer.domElement.clientHeight) * 2 + 1
-        };
+      
+      if(!targetPt) {
+        // No intersection found, try whether able to pick to the ground (sea level)
+        // Pick the ground point (height=0) intersect with the pick ray
+        let ray = raycaster.ray;
+        let origin = ray.origin;
+        let direction = ray.direction;
         
-        let raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(nmouse, camera);
-        
-        let intersects = raycaster.intersectObjects(scene.children);
-        
-        // Pick the nearest intersection point if any
-        if(intersects[0]) {
-          /// 'intersect.face.normal' should be pointing out the direction of the intersecting face. This might be useful, but how?
-          // If found intersect, pick up 'intersect.point' as the pivot location
-          targetPt = intersects[0].point
-        }
-        else {
-          // Pick the ground point (height=0) intersect with the pick ray
-          let ray = raycaster.ray;
-          let origin = ray.origin;
-          let direction = ray.direction;
+        // If pointing to the sky instead of the ground, do nothing
+        if(direction.z<0) {
+          // Find xyz of ground target point downwards
+          let zRatio = origin.z / (-direction.z);
+          let targetX = origin.x + zRatio*direction.x;
+          let targetY = origin.y + zRatio*direction.y;
           
-          // If pointing to the sky instead of the ground, do nothing
-          if(direction.z<0) {
-            // Find xyz of ground target point downwards
-            let zRatio = origin.z / (-direction.z);
-            let targetX = origin.x + zRatio*direction.x;
-            let targetY = origin.y + zRatio*direction.y;
-            
-            targetPt = new THREE.Vector3(targetX, targetY, 0);
-          }
+          targetPt = new THREE.Vector3(targetX, targetY, 0);
         }
-        if(targetPt) {
-          this.pivot = targetPt;
-          this.camStart = this.scene.getActiveCamera().clone();
-          this.pivotIndicator.visible = true;
-          this.pivotIndicator.position.copy(targetPt);
-        }
+      }
+      
+      if(targetPt) {
+        this.pivot = targetPt;
+        this.camStart = this.scene.getActiveCamera().clone();
+        // this.pivotIndicator.visible = true;
+        this.pivotIndicator.position.copy(targetPt);
       }
     };
 
