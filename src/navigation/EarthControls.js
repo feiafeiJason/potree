@@ -37,6 +37,8 @@ export class EarthControls extends EventDispatcher {
       ROTATEL: ['Q'.charCodeAt(0), 42], 
       ROTATEU: ['T'.charCodeAt(0), 43],  // roate up
       ROTATED: ['G'.charCodeAt(0), 44],  // roate dwon
+      ZOOMIN: ['Z'.charCodeAt(0)],
+      ZOOMOUT: ['X'.charCodeAt(0)],
       SPEEDUP: [14, 15,16]  // roate dwon
     };
 
@@ -160,9 +162,6 @@ export class EarthControls extends EventDispatcher {
         x: (mouse.x / renderer.domElement.clientWidth) * 2 - 1,
         y: -(mouse.y / renderer.domElement.clientHeight) * 2 + 1
       };
-      
-      console.log(mouse);
-      console.log(nmouse);
       
       let raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(nmouse, camera);
@@ -350,12 +349,18 @@ export class EarthControls extends EventDispatcher {
       let rotateDown = this.keys.ROTATED.some(e => ih.pressedKeys[e]);
       let speedUp = this.keys.SPEEDUP.some(e => ih.pressedKeys[e]);
       
+      // Fov Zoom in/out
+      let zoomIn = this.keys.ZOOMIN.some(e => ih.pressedKeys[e]);
+      let zoomOut = this.keys.ZOOMOUT.some(e => ih.pressedKeys[e]);
+      
+      let fov = camera.fov;
+      if(zoomIn && fov>10) { this.viewer.setFOV(fov-1); }
+      if(zoomOut && fov<105) { this.viewer.setFOV(fov+1); }
+      
       let effectScale = 0.1;
       
       // rotate event
-      if (rotateLeft && rotateRight) {
-      }
-      else if (rotateRight) {
+      if (rotateRight) {
         // console.log("rotateRight")
         this.yawDelta = 1 * effectScale
       } else if (rotateLeft) {
