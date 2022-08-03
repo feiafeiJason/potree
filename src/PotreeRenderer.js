@@ -856,6 +856,9 @@ export class Renderer {
 			}
 
 			const geometry = node.geometryNode.geometry;
+      
+      // JASON's update: Sometimes geometry might be null for network issue (especially). Skip otherwise the error may corrupt the viewer
+      if(!geometry) { continue; }
 
 			if(geometry.attributes["gps-time"]){
 				const bufferAttribute = geometry.attributes["gps-time"];
