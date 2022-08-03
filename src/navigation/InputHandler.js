@@ -255,28 +255,53 @@ export class InputHandler extends EventDispatcher {
 
 		let consumed = false;
 		let consume = () => { return consumed = true; };
-		if (this.hoveredElements.length === 0) {
-			for (let inputListener of this.getSortedListeners()) {
-				inputListener.dispatchEvent({
-					type: 'mousedown',
-					viewer: this.viewer,
-					mouse: this.mouse
-				});
-			}
-		}else{
-			for(let hovered of this.hoveredElements){
+    
+    // JASON's update. If the object is a BoxVolume, still trigger viewer's default mouse event since it's transparent and user would expect selecting inside as well
+    // Test box editing does not have problem after this modification.
+		// if (this.hoveredElements.length === 0) {
+			// for (let inputListener of this.getSortedListeners()) {
+				// inputListener.dispatchEvent({
+					// type: 'mousedown',
+					// viewer: this.viewer,
+					// mouse: this.mouse
+				// });
+			// }
+		// }else{
+			// for(let hovered of this.hoveredElements){
+				// let object = hovered.object;
+				// object.dispatchEvent({
+					// type: 'mousedown',
+					// viewer: this.viewer,
+					// consume: consume
+				// });
+        
+				// if(consumed){
+					// break;
+				// }
+			// }
+		// }
+     
+    if (this.hoveredElements.length) {
+      for(let hovered of this.hoveredElements){
 				let object = hovered.object;
 				object.dispatchEvent({
 					type: 'mousedown',
 					viewer: this.viewer,
 					consume: consume
 				});
-
+        
 				if(consumed){
 					break;
 				}
 			}
-		}
+    }
+    for (let inputListener of this.getSortedListeners()) {
+      inputListener.dispatchEvent({
+        type: 'mousedown',
+        viewer: this.viewer,
+        mouse: this.mouse
+      });
+    }
 
 		if (!this.drag) {
 			let target = this.hoveredElements
