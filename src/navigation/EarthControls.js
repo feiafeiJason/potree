@@ -144,6 +144,7 @@ export class EarthControls extends EventDispatcher {
     };
 
     let onMouseDown = e => {
+      console.log('Mouse down received');
       let mouse = e.mouse;
       let camera = this.scene.getActiveCamera();
       let viewer = this.viewer;
@@ -604,5 +605,7 @@ export class EarthControls extends EventDispatcher {
       this.zoomDelta.multiplyScalar(fade);
       this.wheelDelta = 0;
     }
+    
+    this.viewer.requestRender();
   }
 };

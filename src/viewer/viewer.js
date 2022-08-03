@@ -130,6 +130,11 @@ export class Viewer extends EventDispatcher{
 		this.server = null;
 
 		this.fov = 60;
+        
+        // JASON's update. User-define camera near-far to enable scene depth limit
+        this.near = undefined;
+        this.far = undefined;
+        
 		this.isFlipYZ = false;
 		this.useDEMCollisions = false;
 		this.generateDEM = false;
@@ -164,6 +169,16 @@ export class Viewer extends EventDispatcher{
 		this.edlRenderer = null;
 		this.renderer = null;
 		this.pRenderer = null;
+    
+    // JASON's update. User-define whether the rendering is automatic or manual
+    this.useDefaultRenderLoop = true;
+    // JASON's update. Proposal of requesting render manually
+    /*
+      0. No rendering task left
+      1. Render request received when idle and start immediately
+      2. New rendering task(s) received when rendering is going on. State 2 means further rendering(s) noted and will be dealed with after this round of rendering.
+    */
+    this._requestedRender = 0;
 
 		this.scene = null;
 		this.sceneVR = null;
@@ -338,6 +353,10 @@ export class Viewer extends EventDispatcher{
 		this.measuringTool = new MeasuringTool(this);
 		this.profileTool = new ProfileTool(this);
 		this.volumeTool = new VolumeTool(this);
+    
+    /// JASON's update, but to be reviewed whether this is optimal
+    if(!Potree.activeViewers) { Potree.activeViewers = []; }
+    Potree.activeViewers.push(this);
 
 		}catch(e){
 			this.onCrash(e);
@@ -348,11 +367,11 @@ export class Viewer extends EventDispatcher{
 
 		$(this.renderArea).empty();
 
-		if ($(this.renderArea).find('#potree_failpage').length === 0) {
+		if ($(this.renderArea).find('#scene_3d_failpage').length === 0) {
 			let elFailPage = $(`
-			<div id="#potree_failpage" class="potree_failpage"> 
+			<div id="#scene_3d_failpage" class="scene_3d_failpage"> 
 				
-				<h1>Potree Encountered An Error </h1>
+				<h1>3D Rendering Encountered An Error </h1>
 
 				<p>
 				This may happen if your browser or graphics card is not supported.
@@ -367,19 +386,12 @@ export class Viewer extends EventDispatcher{
 				Please also visit <a href="http://webglreport.com/" target="_blank">webglreport.com</a> and 
 				check whether your system supports WebGL.
 				</p>
-				<p>
-				If you are already using one of the recommended browsers and WebGL is enabled, 
-				consider filing an issue report at <a href="https://github.com/potree/potree/issues" target="_blank">github</a>,<br>
-				including your operating system, graphics card, browser and browser version, as well as the 
-				error message below.<br>
-				Please do not report errors on unsupported browsers.
-				</p>
 
-				<pre id="potree_error_console" style="width: 100%; height: 100%"></pre>
+				<pre id="scene_3d_error_console" style="width: 100%; height: 100%"></pre>
 				
 			</div>`);
 
-			let elErrorMessage = elFailPage.find('#potree_error_console');
+			let elErrorMessage = elFailPage.find('#scene_3d_error_console');
 			elErrorMessage.html(error.stack);
 
 			$(this.renderArea).append(elFailPage);
@@ -670,6 +682,45 @@ export class Viewer extends EventDispatcher{
 
 	getFOV () {
 		return this.fov;
+	};
+    
+  setNear (value) {
+    if (this.near !== value) {
+			this.near = value;
+		}
+  };
+    
+  getNear () {
+		return this.near;
+	};
+    
+  setFar (value) {
+    if (this.far !== value) {
+			this.far = value;
+		}
+  };
+    
+  getFar () {
+		return this.far;
+	};
+
+  setUseDefaultRenderLoop (value) {
+    if (this.useDefaultRenderLoop !== value) {
+      this.useDefaultRenderLoop = value;
+      
+      value 
+        ? this.renderer.setAnimationLoop(this.loop.bind(this))
+        : this.renderer.setAnimationLoop(null);
+        
+      // if(!value) {
+        // // If stopped render loop, init with a manual update
+        // this.requestRender();
+      // }
+    }
+  };
+
+  getUseDefaultRenderLoop () {
+		return this.useDefaultRenderLoop;
 	};
 
 	disableAnnotations () {
@@ -1691,7 +1742,7 @@ export class Viewer extends EventDispatcher{
 		}
 
 		if (!this.freeze) {
-			let result = Potree.updatePointClouds(scene.pointclouds, camera, this.renderer);
+			let result = Potree.updatePointClouds(scene.pointclouds, camera, this.renderer, this);
 
 
 			// DEBUG - ONLY DISPLAY NODES THAT INTERSECT MOUSE
@@ -1787,6 +1838,9 @@ export class Viewer extends EventDispatcher{
 			}
 		} 
 		
+        // JASON apply camera near and far (ANYWAY)
+        if(this.near) { camera.near = this.near; }
+        if(this.far) { camera.far = this.far; }
 		this.scene.cameraP.fov = this.fov;
 		
 		let controls = this.getControls();
@@ -2252,6 +2306,46 @@ export class Viewer extends EventDispatcher{
 			}
 		}
 	}
+  
+  // JASON's update. Proposal of managing manual render. Won't be working when rendering is in automatic loop
+  async requestRender (isCallback) {
+    // if(window.isDebug) { console.log(bugbugbug); }
+    
+    if(this.useDefaultRenderLoop) { return; }
+      
+    if(this._requestedRender>1) { return; }
+    
+    if(!isCallback) { this._requestedRender++; }
+    // console.log(isCallback);
+    // console.log(this._requestedRender);
+    
+    /// TODO: cont'd
+    let that = this;
+    setTimeout(function() {
+      let promise = new Promise(function(resolve, reject) {
+        if(that._requestedRender == 1) {
+          // console.log('RENDERING');
+          that.update(that.clock.getDelta(), 0);    // Timestamp is no concern here
+          that.render();
+        }
+          
+        resolve();
+      });
+      promise.then(() => {
+        if(that._requestedRender==0) {
+          return;
+        }
+        that._requestedRender--;
+        
+        if(that._requestedRender==1) {
+          that.requestRender(true);
+        }
+        else if(that._requestedRender==0) {
+          console.log('Render batch finished.');
+        }
+      });
+    }, 0);
+  }
 
 	loop(timestamp){
 

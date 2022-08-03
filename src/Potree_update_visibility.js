@@ -3,7 +3,7 @@ import * as THREE from "../libs/three.js/build/three.module.js";
 import {ClipTask, ClipMethod} from "./defines.js";
 import {Box3Helper} from "./utils/Box3Helper.js";
 
-export function updatePointClouds(pointclouds, camera, renderer){
+export function updatePointClouds(pointclouds, camera, renderer, viewer){
 
 	for (let pointcloud of pointclouds) {
 		let start = performance.now();
@@ -403,9 +403,14 @@ export function updateVisibility(pointclouds, camera, renderer){
 		}
 	}
 
-	for (let i = 0; i < Math.min(Potree.maxNodesLoading, unloadedGeometry.length); i++) {
+  let loadingNodeCount = Math.min(Potree.maxNodesLoading, unloadedGeometry.length);
+	for (let i = 0; i < loadingNodeCount; i++) {
 		unloadedGeometry[i].load();
 	}
+  if(!loadingNodeCount) { 
+    ; /// TODO: current pointcloud load finish event
+  }
+  // if(loadingNodeCount) { Potree.requestRender(); }
 
 	return {
 		visibleNodes: visibleNodes,
@@ -414,3 +419,19 @@ export function updateVisibility(pointclouds, camera, renderer){
 	};
 };
 
+/// JASON's update. Create a global function to manually render all the scenes on-demand
+/// Under review. This mode is seemingly having lower performance on pointcloud loading
+export function requestRender() {
+  if(Potree.activeViewers && Potree.activeViewers.length) {
+    // Explicitly request render for the viewers
+    for(let i=0; i<Potree.activeViewers.length; i++) {
+      let viewer = Potree.activeViewers[i];
+      if(
+        viewer.renderArea.style.display!='none'
+        && !viewer.useDefaultRenderLoop
+      ) {
+        viewer.requestRender();
+      }
+    }
+  }
+}
