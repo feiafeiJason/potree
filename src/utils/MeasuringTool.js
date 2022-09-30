@@ -256,7 +256,7 @@ export class MeasuringTool extends EventDispatcher{
     let childrens = this.viewer.scene.scene.children;
     // update size of Sprite
     for (let children of childrens) { 
-      if (children instanceof window.IconSprite) { 
+      if (window.IconSprite && children instanceof window.IconSprite) { 
         children.updateSize();
       }
     }

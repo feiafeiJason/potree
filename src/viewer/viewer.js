@@ -361,6 +361,9 @@ export class Viewer extends EventDispatcher{
 		}catch(e){
 			this.onCrash(e);
 		}
+    
+    /// Jason's custom parameters
+    this.clipPlanes = [];
 	}
 
 	onCrash(error){
@@ -1494,7 +1497,9 @@ export class Viewer extends EventDispatcher{
 
 		let canvas = document.createElement("canvas");
 
-		let context = canvas.getContext('webgl', contextAttributes );
+    // Potree is not supporting WebGL2
+		// let context = canvas.getContext('webgl2', contextAttributes );
+    let context = canvas.getContext('webgl', contextAttributes );
 
     /// Allow screen capture
 		this.renderer = new THREE.WebGLRenderer({
@@ -1502,6 +1507,7 @@ export class Viewer extends EventDispatcher{
 			premultipliedAlpha: false,
 			canvas: canvas,
       preserveDrawingBuffer: true,
+      // logarithmicDepthBuffer: true,
 			context: context});
 		this.renderer.sortObjects = false;
 		this.renderer.setSize(width, height);
@@ -1925,6 +1931,8 @@ export class Viewer extends EventDispatcher{
 			// set clip volumes in material
 			for(let pointcloud of visiblePointClouds){
 				pointcloud.material.setClipBoxes(clipBoxes);
+        pointcloud.material.setClipPlanes(this.clipPlanes);
+        
 				pointcloud.material.setClipPolygons(clipPolygons, this.clippingTool.maxPolygonVertices);
 				pointcloud.material.clipTask = this.clipTask;
 				pointcloud.material.clipMethod = this.clipMethod;

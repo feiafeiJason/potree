@@ -1097,6 +1097,7 @@ export class Renderer {
 
 				let numSnapshots = material.snapEnabled ? material.numSnapshots : 0;
 				let numClipBoxes = (material.clipBoxes && material.clipBoxes.length) ? material.clipBoxes.length : 0;
+        let numClipPlanes = (material.clipPlanes && material.clipPlanes.length) ? material.clipPlanes.length : 0;
 				let numClipSpheres = (params.clipSpheres && params.clipSpheres.length) ? params.clipSpheres.length : 0;
 				let numClipPolygons = (material.clipPolygons && material.clipPolygons.length) ? material.clipPolygons.length : 0;
 
@@ -1104,6 +1105,7 @@ export class Renderer {
 					`#define num_shadowmaps ${shadowMaps.length}`,
 					`#define num_snapshots ${numSnapshots}`,
 					`#define num_clipboxes ${numClipBoxes}`,
+          `#define num_clipplanes ${numClipPlanes}`,
 					`#define num_clipspheres ${numClipSpheres}`,
 					`#define num_clippolygons ${numClipPolygons}`,
 				];
@@ -1244,7 +1246,7 @@ export class Renderer {
 				shader.setUniform("uUseOrthographicCamera", false);
 			}
 
-			if(material.clipBoxes.length + material.clipPolygons.length === 0){
+			if(material.clipBoxes.length + material.clipPlanes.length + material.clipPolygons.length === 0){
 				shader.setUniform1i("clipTask", ClipTask.NONE);
 			}else{
 				shader.setUniform1i("clipTask", material.clipTask);
@@ -1260,6 +1262,11 @@ export class Renderer {
 
 				const lClipBoxes = shader.uniformLocations["clipBoxes[0]"];
 				gl.uniformMatrix4fv(lClipBoxes, false, material.uniforms.clipBoxes.value);
+			}
+      
+      if (material.clipPlanes && material.clipPlanes.length > 0) {
+				const lClipPlanes = shader.uniformLocations["clipPlanes[0]"];
+				gl.uniformMatrix4fv(lClipPlanes, false, material.uniforms.clipPlanes.value);
 			}
 
 			// TODO CLIPSPHERES

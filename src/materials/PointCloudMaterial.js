@@ -38,6 +38,7 @@ export class PointCloudMaterial extends THREE.RawShaderMaterial {
 		this._shape = PointShape.SQUARE;
 		this._useClipBox = false;
 		this.clipBoxes = [];
+    this.clipPlanes = [];
 		this.clipPolygons = [];
 		this._weighted = false;
 		this._gradient = Gradients.SPECTRAL;
@@ -100,9 +101,11 @@ export class PointCloudMaterial extends THREE.RawShaderMaterial {
 			elevationRange:		{ type: "2fv", value: [0, 0] },
 
 			clipBoxCount:		{ type: "f", value: 0 },
+      clipPlaneCount:		{ type: "i", value: 0 },
 			//clipSphereCount:	{ type: "f", value: 0 },
 			clipPolygonCount:	{ type: "i", value: 0 },
 			clipBoxes:			{ type: "Matrix4fv", value: [] },
+      clipPlanes:			{ type: "Matrix4fv", value: [] },
 			//clipSpheres:		{ type: "Matrix4fv", value: [] },
 			clipPolygons:		{ type: "3fv", value: [] },
 			clipPolygonVCount:	{ type: "iv", value: [] },
@@ -304,7 +307,90 @@ export class PointCloudMaterial extends THREE.RawShaderMaterial {
 		}
 	}
 
-	setClipPolygons(clipPolygons, maxPolygonVertices) {
+  /// Jason 20220923
+  /**
+  Each clip plane defined like:
+  {
+    center: new Three.Vector3(800000,800000,10),
+    heading: 1,
+    pitch: 1.57
+  }
+   */
+	setClipPlanes (clipPlanes) {
+    if (!clipPlanes) {
+			return;
+		}
+    
+    let doUpdate = (this.clipPlanes.length !== clipPlanes.length) && (clipPlanes.length === 0 || this.clipPlanes.length === 0);
+
+		this.uniforms.clipPlaneCount.value = this.clipPlanes.length;
+		this.clipPlanes = clipPlanes;
+
+		if (doUpdate) {
+			this.updateShaderSource();
+		}
+    
+    this.uniforms.clipPlanes.value = new Float32Array(this.clipPlanes.length * 16);
+    
+    // Function to convert plane center and rotation to rotation-transformation matrix
+    function positionRotationToMatrix (position, heading, pitch) {
+      /// Note that heading seems to be counter-clockwise so to be multiplied by '-1'
+      let h = -heading;
+      // Note that if the plane's normal is y-axis by default, the pitch is actually roll
+      let r = pitch;
+      let x = position.x, y = position.y, z = position.z;
+      
+      // Local to world transformation matrix
+      let m4 = new THREE.Matrix4();
+      
+      m4.set(
+        Math.cos(h), -Math.sin(h)*Math.cos(r), Math.sin(h)*Math.sin(r), x,
+        Math.sin(h), Math.cos(h)*Math.cos(r), -Math.cos(h)*Math.sin(r), y,
+        0.0, Math.sin(r), Math.cos(r), z,
+        0.0, 0.0, 0.0, 1.0
+      );
+      
+      return m4;
+    }
+    
+    // Similar as 'Matrix4.inverseTransform()' in Cesium
+    function inverseMatrix (m4) {
+      let elms = m4.elements;
+      
+      let vX=elms[12], vY=elms[13], vZ=elms[14];
+      let x = -elms[0]*vX - elms[1]*vY - elms[2]*vZ;
+      let y = -elms[4]*vX - elms[5]*vY - elms[6]*vZ;
+      let z = -elms[8]*vX - elms[9]*vY - elms[10]*vZ;
+      
+      let invM4 = new THREE.Matrix4();
+      
+      invM4.set(
+        elms[0], elms[1], elms[2], x,
+        elms[4], elms[5], elms[6], y,
+        elms[8], elms[9], elms[10], z,
+        0, 0, 0, 1
+      );
+      
+      return invM4;
+    }
+    
+    for (let i = 0; i < this.clipPlanes.length; i++) {
+			let plane = clipPlanes[i];
+      let localToWorldM4 = positionRotationToMatrix(plane.center, plane.heading, plane.pitch);
+      let worldToLocalM4 = inverseMatrix(localToWorldM4);     // Should be faster than generic invert()
+      // let worldToLocalM4 = localToWorldM4.clone().invert();
+
+			this.uniforms.clipPlanes.value.set(worldToLocalM4.elements, 16 * i);
+		}
+
+		for (let i = 0; i < this.uniforms.clipPlanes.value.length; i++) {
+			if (Number.isNaN(this.uniforms.clipPlanes.value[i])) {
+				this.uniforms.clipPlanes.value[i] = Infinity;
+			}
+		}
+  }
+  
+  setClipPolygons(clipPolygons, maxPolygonVertices) {
 		if(!clipPolygons){
 			return;
 		}

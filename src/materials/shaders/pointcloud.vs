@@ -50,6 +50,10 @@ uniform int clipMethod;
 	uniform mat4 clipBoxes[num_clipboxes];
 #endif
 
+#if defined(num_clipplanes) && num_clipplanes > 0
+	uniform mat4 clipPlanes[num_clipplanes];
+#endif
+
 #if defined(num_clipspheres) && num_clipspheres > 0
 	uniform mat4 uClipSpheres[num_clipspheres];
 #endif
@@ -810,6 +814,17 @@ void doClipping(){
 			bool inside = -0.5 <= clipPosition.x && clipPosition.x <= 0.5;
 			inside = inside && -0.5 <= clipPosition.y && clipPosition.y <= 0.5;
 			inside = inside && -0.5 <= clipPosition.z && clipPosition.z <= 0.5;
+
+			insideCount = insideCount + (inside ? 1 : 0);
+			clipVolumesCount++;
+		}	
+	#endif
+  
+  // Jason 20220923. One-sided clipping plane
+  #if defined(num_clipplanes) && num_clipplanes > 0
+		for(int i = 0; i < num_clipplanes; i++){
+      vec4 clipPosition4 = clipPlanes[i] * modelMatrix * vec4( position, 1.0 );
+      bool inside = clipPosition4.y < 0.0;
 
 			insideCount = insideCount + (inside ? 1 : 0);
 			clipVolumesCount++;

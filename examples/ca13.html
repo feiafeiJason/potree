@@ -73,7 +73,72 @@
 				[694517.403, 3899262.595, 10642.698],
 				[694878.410, 3916332.067, 14.497],
 			);
+
+      viewer.setClipMethod(0);
+      viewer.setClipTask(1);
 		});
+    
+    // Debug: material set clipping plane
+    // Use the coordinate (694782, 3916432, 32)
+    /// Trying to specify clip plane for point cloud. Similar impl. with clipping box but not working
+    viewer.clipPlanes = [{
+      center: new THREE.Vector3(694782, 3916432, 32),
+      heading: 0,
+      pitch: 0
+    }];
+    
+    let scene = viewer.scene.scene;
+    let sphereGeom = new THREE.SphereBufferGeometry(10, 32, 16);
+    // let markerMaterial = new THREE.MeshStandardMaterial({ 
+      // color: 0x00ffff
+    // });
+    
+    /// Test failed for potree loading default material through customable shader
+    // let newShader = {
+      // fragmentShader: THREE.ShaderLib.standard.fragmentShader,
+      // vertexShader: THREE.ShaderLib.standard.vertexShader,
+      // uniforms: JSON.parse(JSON.stringify(THREE.ShaderLib.standard.uniforms))
+    // }
+    // newShader.fragmentShader = newShader.fragmentShader.replace('#define STANDARD', 
+    // `
+    // #define STANDARD
+    // #extension GL_OES_standard_derivatives : enable
+    // `
+    // );
+    // newShader.uniforms.diffuse.value = new THREE.Color( 0xffff00 );
+    // let markerMaterial = new THREE.ShaderMaterial({
+      // uniforms: newShader.uniforms,
+      // vertexShader: newShader.vertexShader,
+      // fragmentShader: newShader.fragmentShader,
+      // transparent: true,
+      // opacity: 0.5,
+      // alphaTest: 0.5,
+      // depthWrite: false
+    // });
+    
+    
+    // let highlightMesh = new THREE.Mesh( sphereGeom, markerMaterial );
+    // let highlightObj = new THREE.Object3D();
+    
+    // var d1 = new THREE.DirectionalLight( 0xaaaaaa, 1 );
+    // d1.position.set( -1, 1, 1 );
+    // viewer.scene.scene.add( d1 );
+    // var d2 = new THREE.DirectionalLight( 0xaaaaaa, 1 );
+    // d2.position.set( -1, -1, 1 );
+    // viewer.scene.scene.add( d2 );
+    // var d3 = new THREE.DirectionalLight( 0xaaaaaa, 1 );
+    // d3.position.set( 1, 1, 1 );
+    // viewer.scene.scene.add( d3 );
+    // var d4 = new THREE.DirectionalLight( 0xaaaaaa, 1 );
+    // d4.position.set( 1, -1, 1 );
+    // viewer.scene.scene.add( d4 );
+    
+    // highlightObj.position.x = 694794;
+    // highlightObj.position.y = 3916392;
+    // highlightObj.position.z = 7.2;
+    // highlightObj.add(highlightMesh);
+    
+    // viewer.scene.scene.add(highlightObj);
 		
 	</script>
 	
