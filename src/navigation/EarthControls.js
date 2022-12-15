@@ -35,11 +35,11 @@ export class EarthControls extends EventDispatcher {
       DOWN: ['F'.charCodeAt(0), 34],
       ROTATER: ['E'.charCodeAt(0), 41],
       ROTATEL: ['Q'.charCodeAt(0), 42], 
-      ROTATEU: ['T'.charCodeAt(0), 43],  // roate up
-      ROTATED: ['G'.charCodeAt(0), 44],  // roate dwon
+      ROTATEU: ['T'.charCodeAt(0), 43],  // rotate up
+      ROTATED: ['G'.charCodeAt(0), 44],  // rotate down
       ZOOMIN: ['Z'.charCodeAt(0)],
       ZOOMOUT: ['X'.charCodeAt(0)],
-      SPEEDUP: [14, 15,16]  // roate dwon
+      SPEEDUP: [14, 15,16]  // rotate down
     };
 
     {
@@ -144,7 +144,6 @@ export class EarthControls extends EventDispatcher {
     };
 
     let onMouseDown = e => {
-      console.log('Mouse down received');
       let mouse = e.mouse;
       let camera = this.scene.getActiveCamera();
       let viewer = this.viewer;
@@ -180,10 +179,37 @@ export class EarthControls extends EventDispatcher {
       }
       
       // Pick the nearest intersection point if any
-      if(intersects[0]) {
+      // if(intersects[0]) {
         /// 'intersect.face.normal' should be pointing out the direction of the intersecting face. This might be useful, but how?
         // If found intersect, pick up 'intersect.point' as the pivot location
-        targetPt = intersects[0].point;
+        // targetPt = intersects[0].point;
+      // }
+      
+      // Need to ensure the picked point is visible and non-clipped
+      for(let i=0; i<intersects.length; i++) {
+        let intersect = intersects[i];
+        
+        if(intersect.object.visible) {
+          /// TODO: How to test whether point being clipped out by one of the clipping planes
+          let intersectPoint = intersect.point;
+          
+          let isPointClipped = false;
+          for(let planeIdx in renderer.clippingPlanes) {
+            let plane = renderer.clippingPlanes[planeIdx];
+            let normal = plane.normal;
+            let unitVectorToPlane = new THREE.Vector3(-normal.x, -normal.y, -normal.z);
+            let dotProd = intersectPoint.dot(unitVectorToPlane);
+            if(dotProd > plane.constant) {
+              isPointClipped = true;
+              break;
+            }
+          }
+          
+          if(!isPointClipped) {
+            targetPt = intersectPoint;
+            break;
+          }
+        }
       }
       
       let I = Utils.getMousePointCloudIntersection(
@@ -358,7 +384,7 @@ export class EarthControls extends EventDispatcher {
       if(zoomIn && fov>10) { this.viewer.setFOV(fov-1); }
       if(zoomOut && fov<105) { this.viewer.setFOV(fov+1); }
       
-      let effectScale = 0.1;
+      let effectScale = 0.02;
       
       // rotate event
       if (rotateRight) {
@@ -401,14 +427,15 @@ export class EarthControls extends EventDispatcher {
       // Reset translation
       this.translationWorldDelta = new THREE.Vector3(0,0,0);
       
+      // Use customized 'viewer.moveSpeedKeyboard' to set fly speed by keyboard
       if (moveForward && moveBackward) {
         this.translationWorldDelta.y += 0;
       } else if (moveForward) {
-        this.translationWorldDelta.y += Math.cos(-view.yaw) * this.viewer.getMoveSpeed();
-        this.translationWorldDelta.x += Math.sin(-view.yaw) * this.viewer.getMoveSpeed();
+        this.translationWorldDelta.y += Math.cos(-view.yaw) * this.viewer.getMoveSpeedKeyboard();
+        this.translationWorldDelta.x += Math.sin(-view.yaw) * this.viewer.getMoveSpeedKeyboard();
       } else if (moveBackward) {
-        this.translationWorldDelta.y += -Math.cos(-view.yaw) * this.viewer.getMoveSpeed();
-        this.translationWorldDelta.x += -Math.sin(-view.yaw) * this.viewer.getMoveSpeed();
+        this.translationWorldDelta.y += -Math.cos(-view.yaw) * this.viewer.getMoveSpeedKeyboard();
+        this.translationWorldDelta.x += -Math.sin(-view.yaw) * this.viewer.getMoveSpeedKeyboard();
       }else{
         this.translationWorldDelta.y += 0;
       }
@@ -416,11 +443,11 @@ export class EarthControls extends EventDispatcher {
       if (moveLeft && moveRight) {
         this.translationWorldDelta.x += 0;
       } else if (moveLeft) {
-        this.translationWorldDelta.y += Math.cos(-view.yaw-Math.PI/2) * this.viewer.getMoveSpeed();
-        this.translationWorldDelta.x += Math.sin(-view.yaw-Math.PI/2) * this.viewer.getMoveSpeed();
+        this.translationWorldDelta.y += Math.cos(-view.yaw-Math.PI/2) * this.viewer.getMoveSpeedKeyboard();
+        this.translationWorldDelta.x += Math.sin(-view.yaw-Math.PI/2) * this.viewer.getMoveSpeedKeyboard();
       } else if (moveRight) {
-        this.translationWorldDelta.y += Math.cos(-view.yaw+Math.PI/2) * this.viewer.getMoveSpeed();
-        this.translationWorldDelta.x += Math.sin(-view.yaw+Math.PI/2) * this.viewer.getMoveSpeed();
+        this.translationWorldDelta.y += Math.cos(-view.yaw+Math.PI/2) * this.viewer.getMoveSpeedKeyboard();
+        this.translationWorldDelta.x += Math.sin(-view.yaw+Math.PI/2) * this.viewer.getMoveSpeedKeyboard();
       }else{
         this.translationWorldDelta.x += 0;
       }
@@ -429,9 +456,9 @@ export class EarthControls extends EventDispatcher {
       if (moveUp && moveDown) {
         this.translationWorldDelta.z = 0;
       } else if (moveUp) {
-        this.translationWorldDelta.z = this.viewer.getMoveSpeed();
+        this.translationWorldDelta.z = this.viewer.getMoveSpeedKeyboard();
       } else if (moveDown) {
-        this.translationWorldDelta.z = -this.viewer.getMoveSpeed();
+        this.translationWorldDelta.z = -this.viewer.getMoveSpeedKeyboard();
       }else{
         this.translationWorldDelta.z = 0;
       }
@@ -440,22 +467,41 @@ export class EarthControls extends EventDispatcher {
     // compute zoom
     /// See the mouse down event when dealing with mouse pointing to other objects than pointcloud
     if (this.wheelDelta !== 0) {
-      let mouse = this.viewer.inputHandler.mouse;
-      let camera = this.scene.getActiveCamera();
-      let viewer = this.viewer;
-      let scene = this.scene.scene;
+      // Assume that wheeling between less than half a second is pointing at the same point, directly getting from a cached target point instead of computing every time
       
-      let I = Utils.getMousePointCloudIntersection(
-        mouse, 
-        camera, 
-        viewer, 
-        this.scene.pointclouds);
-
-      let targetPt;
-      if (I) {
-        targetPt = I.location;
+      let mouse = this.viewer.inputHandler.mouse;
+      let targetPt, targetPtCache;
+      let raycaster = new THREE.Raycaster();
+      let currDate = Date.now();
+      
+      let isAdoptWheelCache = false;
+      let wheelCache = this.wheelCache;
+      if(wheelCache) {
+        if(wheelCache.mx==mouse.x && wheelCache.my==mouse.y) {
+          let prevDate = wheelCache.date;
+          if(currDate-prevDate < 500) {
+            targetPt = wheelCache.point;
+            isAdoptWheelCache = true;
+          }
+        }
       }
-      else {
+      
+      if(!isAdoptWheelCache) {
+        let camera = this.scene.getActiveCamera();
+        let viewer = this.viewer;
+        let scene = this.scene.scene;
+        
+        let I = Utils.getMousePointCloudIntersection(
+          mouse, 
+          camera, 
+          viewer, 
+          this.scene.pointclouds);
+
+        if(I) {
+          targetPtCache = I;
+          targetPt = I.location;
+        }
+        
         // Refer to operation in mouse down event
         let renderer = viewer.renderer;
     
@@ -464,45 +510,78 @@ export class EarthControls extends EventDispatcher {
           y: -(mouse.y / renderer.domElement.clientHeight) * 2 + 1
         };
         
-        let raycaster = new THREE.Raycaster();
         raycaster.setFromCamera(nmouse, camera);
         
         let intersects = raycaster.intersectObjects(scene.children);
         
-        // Pick the nearest intersection point if any
-        if(intersects[0]) {
-          // If found intersect, pick up 'intersect.point' as the pivot location
-          targetPt = intersects[0].point
-        }
-        else {
-          // Pick the ground point (height=0) intersect with the pick ray
-          let ray = raycaster.ray;
-          let origin = ray.origin;
-          let direction = ray.direction;
+        // Need to ensure the picked point is visible and non-clipped
+        for(let i=0; i<intersects.length; i++) {
+          let intersect = intersects[i];
           
-          // If pointing to the sky instead of the ground, do nothing
-          if(direction.z<0) {
-            // Find xyz of ground target point downwards
-            let zRatio = origin.z / (-direction.z);
-            let targetX = origin.x + zRatio*direction.x;
-            let targetY = origin.y + zRatio*direction.y;
+          if(targetPtCache) {
+            if(intersect.distance > targetPtCache.distance) {
+              // Picked pointcloud is closer until now. Skip the rest of further picked points
+              break;
+            }
+          }
+          
+          if(intersect.object.visible) {
+            /// TODO: How to test whether point being clipped out by one of the clipping planes
+            let intersectPoint = intersect.point;
             
-            targetPt = new THREE.Vector3(targetX, targetY, 0);
+            let isPointClipped = false;
+            for(let planeIdx in renderer.clippingPlanes) {
+              let plane = renderer.clippingPlanes[planeIdx];
+              let normal = plane.normal;
+              let unitVectorToPlane = new THREE.Vector3(-normal.x, -normal.y, -normal.z);
+              let dotProd = intersectPoint.dot(unitVectorToPlane);
+              if(dotProd > plane.constant) {
+                isPointClipped = true;
+                break;
+              }
+            }
+            
+            if(!isPointClipped) {
+              targetPt = intersectPoint;
+              break;
+            }
           }
         }
       }
       
+      // Pick the nearest intersection point if any
       if(targetPt) {
-        // One extra meter to help zooming into indoor
-        /*
-        console.log(targetPt);
-        console.log(view.position);
-        console.log(this.zoomDelta);
-        console.log('----------------------------------');
-         */
+        // If found intersect, pick up 'intersect.point' as the pivot location
+        ;
+      }
+      else {
+        // Pick the ground point (height=0) intersect with the pick ray
+        let ray = raycaster.ray;
+        let origin = ray.origin;
+        let direction = ray.direction;
         
+        // If pointing to the sky instead of the ground, do nothing
+        if(direction.z<0) {
+          // Find xyz of ground target point downwards
+          let zRatio = origin.z / (-direction.z);
+          let targetX = origin.x + zRatio*direction.x;
+          let targetY = origin.y + zRatio*direction.y;
+          
+          targetPt = new THREE.Vector3(targetX, targetY, 0);
+        }
+      }
+      
+      this.wheelCache = {
+        point: targetPt,
+        date: currDate,
+        mx: mouse.x,
+        my: mouse.y
+      };
+      
+      if(targetPt) {
         let resolvedPos = new THREE.Vector3().addVectors(view.position, this.zoomDelta);
         let distance = targetPt.distanceTo(resolvedPos);
+        // One extra meter to help zooming into indoor
         distance++;
         let jumpDistance = distance * 0.2 * this.wheelDelta;
         let targetDir = new THREE.Vector3().subVectors(targetPt, view.position);
@@ -510,6 +589,17 @@ export class EarthControls extends EventDispatcher {
 
         resolvedPos.add(targetDir.multiplyScalar(jumpDistance));
         this.zoomDelta.subVectors(resolvedPos, view.position);
+        
+        // If really zooming close to the target object, assume to be ready to go through the wall
+        if(distance<1.5) {
+          delete(this.wheelCache);
+        }
+        
+        
+        // console.log(targetPt);
+        // console.log(view.position);
+        // console.log(this.zoomDelta);
+        // console.log('----------------------------------');
 
         {
           let distance = resolvedPos.distanceTo(targetPt);

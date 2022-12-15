@@ -148,6 +148,7 @@ export class Viewer extends EventDispatcher{
 		this.classifications = ClassificationScheme.DEFAULT;
 
 		this.moveSpeed = 10;
+    this.moveSpeedKeyboard = 5;
 
 		this.lengthUnit = LengthUnits.METER;
 		this.lengthUnitDisplay = LengthUnits.METER;
@@ -536,6 +537,17 @@ export class Viewer extends EventDispatcher{
 	getMoveSpeed () {
 		return this.moveSpeed;
 	};
+  
+  setMoveSpeedKeyboard (value) {
+    if (this.moveSpeedKeyboard !== value) {
+			this.moveSpeedKeyboard = value;
+			// this.dispatchEvent({'type': 'move_speed_changed', 'viewer': this, 'speed': value});
+		}
+  };
+  
+  getMoveSpeedKeyboard () {
+    return this.moveSpeedKeyboard;
+  };
 
 	setWeightClassification (w) {
 		for (let i = 0; i < this.scene.pointclouds.length; i++) {
@@ -1511,7 +1523,15 @@ export class Viewer extends EventDispatcher{
 			context: context});
 		this.renderer.sortObjects = false;
 		this.renderer.setSize(width, height);
+    
+    /// Why potree is disabling renderer autoClear?
 		this.renderer.autoClear = false;
+    
+    /// For production use
+    if(window.isProduction) {
+      this.renderer.debug.checkShaderErrors = false;
+    }
+    
 		this.renderArea.appendChild(this.renderer.domElement);
 		this.renderer.domElement.tabIndex = '2222';
 		this.renderer.domElement.style.position = 'absolute';
@@ -2160,6 +2180,11 @@ export class Viewer extends EventDispatcher{
 	}
 
 	renderDefault(){
+    /// Debug only. Only testing for whether request rendering mode may sometimes improve the performance
+    if(this.isPauseRender) {
+      return;
+    }
+    
 		let pRenderer = this.getPRenderer();
 
 		{ // resize
@@ -2190,7 +2215,28 @@ export class Viewer extends EventDispatcher{
 		pRenderer.clear();
 
 		pRenderer.render(this.renderer);
-		this.renderer.render(this.overlay, this.overlayCamera);
+    
+    /// JASON detect resizables from VR3D. Consider merging into potree.js
+    /// Might be better check whether resizing is needed
+    if(this.resizableCollection) {
+      this.resizableCollection.doResize();
+    }
+    
+    /// TODO: real-time render base map, but should be something to improve/enhance
+    let tiledMap = this.tiledMap;
+    if(tiledMap) {
+      /// TODO: does this always need update? Should be much better if any detection on when the map might not need any update
+      tiledMap.update();
+    }
+    let tiledTerrain = this.tiledTerrain;
+    if(tiledTerrain) {
+      /// TODO: does this always need update? Should be much better if any detection on when the map might not need any update
+      /// Case for tiledTerrain might be a little bit better
+      tiledTerrain.update();
+    }
+    
+    /// What is the usage of this?
+		// this.renderer.render(this.overlay, this.overlayCamera);
 	}
 	
 	render(){
@@ -2214,6 +2260,11 @@ export class Viewer extends EventDispatcher{
 			performance.measure("render", "render-start", "render-end");
 		}
 	}
+  
+  /// Designed to be rewritten in VR3D to define the action to be taken when clipping box is being modified
+  onUpdateVolume() {
+    ;
+  }
 
 	resolveTimings(timestamp){
 		if(Potree.measureTimings){

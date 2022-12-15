@@ -59,8 +59,8 @@ export class TransformationTool {
 			"translation.z": {name: "translation.z", node:  new THREE.Object3D(), color: blue, alignment: [0, 0, 1]},
 		};
 		this.rotationHandles = {
-			"rotation.x": {name: "rotation.x", node:  new THREE.Object3D(), color: red, alignment: [1, 0, 0]},
-			"rotation.y": {name: "rotation.y", node:  new THREE.Object3D(), color: green, alignment: [0, 1, 0]},
+			// "rotation.x": {name: "rotation.x", node:  new THREE.Object3D(), color: red, alignment: [1, 0, 0]},
+			// "rotation.y": {name: "rotation.y", node:  new THREE.Object3D(), color: green, alignment: [0, 1, 0]},
 			"rotation.z": {name: "rotation.z", node:  new THREE.Object3D(), color: blue, alignment: [0, 0, 1]},
 		};
 		this.handles = Object.assign({}, this.scaleHandles, this.focusHandles, this.translationHandles, this.rotationHandles);
@@ -508,10 +508,13 @@ export class TransformationTool {
 			let normal = new THREE.Vector3(...handle.alignment);
 			for (let selection of this.selection) {
 				selection.rotateOnAxis(normal, angle);
-				selection.dispatchEvent({
+				
+        selection.dispatchEvent({
 					type: "orientation_changed",
 					object: selection
 				});
+        
+        this.viewer.onUpdateVolume();
 			}
 
 			drag.pivot = I;
@@ -566,6 +569,8 @@ export class TransformationTool {
 						type: "position_changed",
 						object: selection
 					});
+          
+          this.viewer.onUpdateVolume();
 				}
 
 				drag.pivot = drag.pivot.add(diff);
@@ -650,6 +655,8 @@ export class TransformationTool {
 						type: "scale_changed",
 						object: selection
 					});
+          
+          this.viewer.onUpdateVolume();
 				}
 
 				drag.pivot.copy(iOnLine);
@@ -800,12 +807,12 @@ export class TransformationTool {
 					let tObject = tWorld.clone().invert();
 					let camObjectPos = camera.getWorldPosition(new THREE.Vector3()).applyMatrix4(tObject);
 
-					let x = this.rotationHandles["rotation.x"].node.rotation;
-					let y = this.rotationHandles["rotation.y"].node.rotation;
+					// let x = this.rotationHandles["rotation.x"].node.rotation;
+					// let y = this.rotationHandles["rotation.y"].node.rotation;
 					let z = this.rotationHandles["rotation.z"].node.rotation;
 
-					x.order = "ZYX";
-					y.order = "ZYX";
+					// x.order = "ZYX";
+					// y.order = "ZYX";
 
 					let above = camObjectPos.z > 0;
 					let below = !above;
@@ -813,38 +820,38 @@ export class TransformationTool {
 
 					if(above){
 						if(camObjectPos.x > 0 && camObjectPos.y > 0){
-							x.x = 1 * PI_HALF;
-							y.y = 3 * PI_HALF;
+							// x.x = 1 * PI_HALF;
+							// y.y = 3 * PI_HALF;
 							z.z = 0 * PI_HALF;
 						}else if(camObjectPos.x < 0 && camObjectPos.y > 0){
-							x.x = 1 * PI_HALF;
-							y.y = 2 * PI_HALF;
+							// x.x = 1 * PI_HALF;
+							// y.y = 2 * PI_HALF;
 							z.z = 1 * PI_HALF;
 						}else if(camObjectPos.x < 0 && camObjectPos.y < 0){
-							x.x = 2 * PI_HALF;
-							y.y = 2 * PI_HALF;
+							// x.x = 2 * PI_HALF;
+							// y.y = 2 * PI_HALF;
 							z.z = 2 * PI_HALF;
 						}else if(camObjectPos.x > 0 && camObjectPos.y < 0){
-							x.x = 2 * PI_HALF;
-							y.y = 3 * PI_HALF;
+							// x.x = 2 * PI_HALF;
+							// y.y = 3 * PI_HALF;
 							z.z = 3 * PI_HALF;
 						}
 					}else if(below){
 						if(camObjectPos.x > 0 && camObjectPos.y > 0){
-							x.x = 0 * PI_HALF;
-							y.y = 0 * PI_HALF;
+							// x.x = 0 * PI_HALF;
+							// y.y = 0 * PI_HALF;
 							z.z = 0 * PI_HALF;
 						}else if(camObjectPos.x < 0 && camObjectPos.y > 0){
-							x.x = 0 * PI_HALF;
-							y.y = 1 * PI_HALF;
+							// x.x = 0 * PI_HALF;
+							// y.y = 1 * PI_HALF;
 							z.z = 1 * PI_HALF;
 						}else if(camObjectPos.x < 0 && camObjectPos.y < 0){
-							x.x = 3 * PI_HALF;
-							y.y = 1 * PI_HALF;
+							// x.x = 3 * PI_HALF;
+							// y.y = 1 * PI_HALF;
 							z.z = 2 * PI_HALF;
 						}else if(camObjectPos.x > 0 && camObjectPos.y < 0){
-							x.x = 3 * PI_HALF;
-							y.y = 0 * PI_HALF;
+							// x.x = 3 * PI_HALF;
+							// y.y = 0 * PI_HALF;
 							z.z = 3 * PI_HALF;
 						}
 					}

@@ -85,24 +85,57 @@ export class VolumeTool extends EventDispatcher{
 		};
 
 		let drag = e => {
-			console.log("drag")
 			let camera = this.viewer.scene.getActiveCamera();
 			
 			let I = Utils.getMousePointCloudIntersection(
 				e.drag.end, 
-				this.viewer.scene.getActiveCamera(), 
+				camera, 
 				this.viewer, 
 				this.viewer.scene.pointclouds, 
 				{pickClipped: false});
 
+      let boxPosition;
+      let intersectionCache;
+      
 			if (I) {
-				volume.position.copy(I.location);
+        intersectionCache = I;
+        boxPosition = I.location;
+			}
+
+      let viewerDom = this.viewer.renderer.domElement;
+      
+      let raycaster = new THREE.Raycaster();
+      let nmouse = {
+        x: (e.drag.end.x / viewerDom.clientWidth) * 2 - 1,
+        y: -(e.drag.end.y / viewerDom.clientHeight) * 2 + 1
+      };
+      
+      raycaster.setFromCamera(nmouse, camera);
+      let intersects = raycaster.intersectObjects(this.viewer.scene.scene.children);
+
+      for(let i=0; i<intersects.length; i++) {
+        let intersect = intersects[i];
+        let pickObj = intersect.object;
+        if(pickObj.visible) {
+          if(
+            !intersectionCache
+            || intersectionCache.distance > intersect.distance
+          ) {
+            boxPosition = intersect.point;
+          }
+
+          break;
+        }
+      }
+      
+      if(boxPosition) {
+        volume.position.copy(boxPosition);
 
 				let wp = volume.getWorldPosition(new THREE.Vector3()).applyMatrix4(camera.matrixWorldInverse);
 				// let pp = new THREE.Vector4(wp.x, wp.y, wp.z).applyMatrix4(camera.projectionMatrix);
 				let w = Math.abs((wp.z / 5));
 				volume.scale.set(w, w, w);
-			}
+      }
 		};
 
 		let drop = e => {
@@ -132,6 +165,7 @@ export class VolumeTool extends EventDispatcher{
 		if (!this.viewer.scene) {
 			return;
 		}
+
 		// console.log("VolumnTool Update")
 		let camera = this.viewer.scene.getActiveCamera();
 		let renderAreaSize = this.viewer.renderer.getSize(new THREE.Vector2());

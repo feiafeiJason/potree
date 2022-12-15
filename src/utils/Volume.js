@@ -169,7 +169,7 @@ export class BoxVolume extends Volume{
 		// this.frame = new THREE.LineSegments(boxFrameGeometry, new THREE.LineBasicMaterial({color: 0x000000}));
 		// this.frame.mode = THREE.Lines;
 		this.add(this.frame);
-
+    
 		this.update();
 	}
 
